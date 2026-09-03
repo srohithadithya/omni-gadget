@@ -1,1 +1,1 @@
-# empty init
+"""AIDE-OS engines package."""
