@@ -63,6 +63,9 @@ export default function HomePage() {
           <button className="btn btn-primary" onClick={() => navigate('/full-decision')} style={{ background: '#c084fc' }}>
             ⚡ Run Full Decision
           </button>
+          <button className="btn btn-outline" onClick={() => navigate('/dashboard')} style={{ borderColor: '#d97706', color: '#fbbf24' }}>
+            📋 My Dashboard
+          </button>
         </div>
       </div>
 
