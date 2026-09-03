@@ -4,8 +4,10 @@ Exposes processing fees, GST on interest, and forgone cash discounts.
 """
 from dataclasses import dataclass
 
+from app.config import get_settings
 
-GST_RATE = 0.18  # 18% India GST
+_gst = get_settings()
+GST_RATE = _gst.GST_RATE  # From config, default 0.18
 
 
 @dataclass

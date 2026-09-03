@@ -309,7 +309,7 @@ python -m venv .venv
 source .venv/Scripts/activate  # Windows
 # source .venv/bin/activate    # macOS / Linux
 pip install -r requirements.txt
-uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 **2. Frontend** *(new terminal)*
@@ -324,7 +324,7 @@ npm run dev
 | Service | URL |
 |---------|-----|
 | React Dashboard | http://localhost:3000 |
-| FastAPI + Swagger | http://localhost:8001/docs |
+| FastAPI + Swagger | http://localhost:8000/docs |
 
 ---
 

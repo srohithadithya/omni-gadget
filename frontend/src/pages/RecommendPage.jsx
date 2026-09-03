@@ -53,6 +53,16 @@ function Stars({ n }) {
   );
 }
 
+function affiliateLinks(p) {
+  const tag = 'aideos-21';
+  const name = encodeURIComponent(p.brand + ' ' + p.model_name);
+  return {
+    amazon: `https://www.amazon.in/s?k=${name}&tag=${tag}`,
+    earnkaro: `https://earnkaro.com/search?q=${name}`,
+    flipkart: `https://www.flipkart.com/search?q=${name}`,
+  };
+}
+
 function ProductCard({ match, label }) {
   const p = match.product;
   const vb = valueBadge(match.value_verdict);
@@ -95,6 +105,27 @@ function ProductCard({ match, label }) {
           {p.storage_gb ? `  •  💿 ${p.storage_gb}GB Storage` : ''}
         </div>
       )}
+
+      {/* Affiliate Buy Buttons */}
+      {(() => {
+        const links = affiliateLinks(p);
+        return (
+          <div style={{ display: 'flex', gap: 8, marginTop: 10, marginBottom: 6 }}>
+            <a href={links.amazon} target="_blank" rel="noopener noreferrer"
+               className="btn btn-primary" style={{ fontSize: 11, padding: '6px 14px', textDecoration: 'none' }}>
+              🛒 Buy on Amazon
+            </a>
+            <a href={links.flipkart} target="_blank" rel="noopener noreferrer"
+               className="btn btn-outline" style={{ fontSize: 11, padding: '6px 14px', textDecoration: 'none' }}>
+              🛍 Flipkart
+            </a>
+            <a href={links.earnkaro} target="_blank" rel="noopener noreferrer"
+               className="btn btn-outline" style={{ fontSize: 11, padding: '6px 14px', textDecoration: 'none' }}>
+              💰 EarnKaro
+            </a>
+          </div>
+        );
+      })()}
 
       {(p.pros?.length > 0 || p.cons?.length > 0) && (
         <div className="pros-cons">
