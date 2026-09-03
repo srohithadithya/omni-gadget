@@ -40,6 +40,13 @@ class EMIRequest(BaseModel):
     exchange_bonus: float = Field(default=0.0, ge=0, examples=[0])
 
 
+class EMIScheduleRequest(BaseModel):
+    product_msrp: float = Field(..., gt=0, examples=[40000])
+    annual_rate_pct: float = Field(default=13.0, ge=0, le=100, examples=[13.0])
+    tenure_months: int = Field(..., gt=0, examples=[6])
+    no_cost_discount: float = Field(default=0.0, ge=0, examples=[2500])
+
+
 # ─── Module 3 & 4: Recommendations ───────────────────────────────────────────
 
 class RecommendRequest(BaseModel):

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f1117" />
+    <title>AIDE-OS — Offline</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        background: #0f1117;
+        color: #e2e8f0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 2rem;
+      }
+
+      .container {
+        max-width: 420px;
+      }
+
+      .icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 1.5rem;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 0.5rem;
+      }
+
+      .accent {
+        color: #6366f1;
+      }
+
+      p {
+        font-size: 1rem;
+        color: #94a3b8;
+        line-height: 1.6;
+      }
+
+      .retry {
+        display: inline-block;
+        margin-top: 1.5rem;
+        padding: 0.65rem 1.5rem;
+        background: #6366f1;
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .retry:hover {
+        background: #4f46e5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <svg class="icon" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="128" y="128" width="256" height="256" rx="32" fill="#1e1b4b" stroke="#6366f1" stroke-width="6"/>
+        <rect x="188" y="108" width="16" height="24" rx="3" fill="#6366f1"/>
+        <rect x="228" y="108" width="16" height="24" rx="3" fill="#6366f1"/>
+        <rect x="268" y="108" width="16" height="24" rx="3" fill="#6366f1"/>
+        <rect x="308" y="108" width="16" height="24" rx="3" fill="#6366f1"/>
+        <rect x="188" y="380" width="16" height="24" rx="3" fill="#6366f1"/>
+        <rect x="228" y="380" width="16" height="24" rx="3" fill="#6366f1"/>
+        <rect x="268" y="380" width="16" height="24" rx="3" fill="#6366f1"/>
+        <rect x="308" y="380" width="16" height="24" rx="3" fill="#6366f1"/>
+        <rect x="108" y="188" width="24" height="16" rx="3" fill="#6366f1"/>
+        <rect x="108" y="228" width="24" height="16" rx="3" fill="#6366f1"/>
+        <rect x="108" y="268" width="24" height="16" rx="3" fill="#6366f1"/>
+        <rect x="108" y="308" width="24" height="16" rx="3" fill="#6366f1"/>
+        <rect x="380" y="188" width="24" height="16" rx="3" fill="#6366f1"/>
+        <rect x="380" y="228" width="24" height="16" rx="3" fill="#6366f1"/>
+        <rect x="380" y="268" width="24" height="16" rx="3" fill="#6366f1"/>
+        <rect x="380" y="308" width="24" height="16" rx="3" fill="#6366f1"/>
+        <path d="M290 170L230 270L270 270L222 342L310 248L268 248L310 170Z" fill="#818cf8" stroke="#c7d2fe" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+      <h1>AIDE-<span class="accent">OS</span></h1>
+      <p>You are offline. Cached results are available.</p>
+      <button class="retry" onclick="location.reload()">Try Again</button>
+    </div>
+  </body>
+</html>
