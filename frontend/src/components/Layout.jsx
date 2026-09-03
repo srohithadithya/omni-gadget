@@ -7,6 +7,7 @@ const NAV = [
   { path: '/recommend',   icon: '🎯', label: 'Find Gadgets' },
   { path: '/emi-audit',   icon: '💳', label: 'EMI Audit' },
   { path: '/chipflation', icon: '📈', label: 'Chipflation Index' },
+  { path: '/full-decision', icon: '⚡', label: 'Full Decision' },
 ];
 
 export default function Layout({ children }) {

@@ -60,6 +60,9 @@ export default function HomePage() {
           <button className="btn btn-outline" onClick={() => navigate('/recommend')}>
             🎯 Find Best Gadget
           </button>
+          <button className="btn btn-primary" onClick={() => navigate('/full-decision')} style={{ background: '#c084fc' }}>
+            ⚡ Run Full Decision
+          </button>
         </div>
       </div>
 
