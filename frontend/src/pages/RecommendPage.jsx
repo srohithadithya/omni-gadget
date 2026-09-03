@@ -63,6 +63,29 @@ function affiliateLinks(p) {
   };
 }
 
+function ProductImage({ category, brand }) {
+  const icons = {
+    mobile: '📱', laptop: '💻', audio: '🎧', video: '📺', memory: '💾', wearable: '⌚',
+  };
+  const colors = {
+    mobile: '#6366f1', laptop: '#22c55e', audio: '#eab308', video: '#ef4444', memory: '#3b82f6', wearable: '#c084fc',
+  };
+  return (
+    <div style={{
+      width: '100%', height: 100, borderRadius: 'var(--radius-sm)',
+      background: `linear-gradient(135deg, ${colors[category] || '#6366f1'}18, ${colors[category] || '#6366f1'}08)`,
+      border: `1px solid ${colors[category] || '#6366f1'}30`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexDirection: 'column', gap: 4, marginBottom: 10,
+    }}>
+      <span style={{ fontSize: 32 }}>{icons[category] || '📦'}</span>
+      <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>
+        {brand}
+      </span>
+    </div>
+  );
+}
+
 function ProductCard({ match, label }) {
   const p = match.product;
   const vb = valueBadge(match.value_verdict);
@@ -71,6 +94,7 @@ function ProductCard({ match, label }) {
 
   return (
     <div className="product-card">
+      <ProductImage category={p.category || p.tier} brand={p.brand} />
       <div className="product-header">
         <div>
           <div className="product-name">{p.brand} {p.model_name}</div>
