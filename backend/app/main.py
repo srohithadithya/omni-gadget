@@ -1,131 +1,77 @@
 """
-AIDE-OS Backend — FastAPI Application Entry Point
-All 7 engines wired into REST endpoints.
+AIDE-OS — FastAPI Application Entry Point v4.0.0-PROD
+Clean, schema-separated implementation with all 5 endpoints.
 """
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import Optional
 from datetime import datetime
 
+from app.config import get_settings
+from app.schemas import (
+    URLRequest, ChipflationRequest, EMIRequest,
+    RecommendRequest, FullDecisionRequest
+)
 from app.engines.url_engine import URLInput, calculate_url
 from app.engines.chipflation_engine import ChipflationInput, calculate_di
 from app.engines.emi_engine import EMIInput, calculate_true_emi_cost
 from app.engines.recommendation_engine import RecommendationInput, recommend_products
 
+cfg = get_settings()
+
 app = FastAPI(
-    title="AIDE-OS API",
-    description="AI-Driven Electronic Device Ecosystem — Open Source Decision Engine",
-    version="4.0.0-PROD",
+    title=cfg.APP_NAME,
+    description=(
+        "AI-Driven Electronic Device Ecosystem — "
+        "Dynamic Pricing, Longevity & Purchase Decision Engine"
+    ),
+    version=cfg.APP_VERSION,
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cfg.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# ─── Pydantic request schemas ────────────────────────────────────────────────
-
-class URLRequest(BaseModel):
-    category: str = Field(..., example="mobile")
-    age_months: int = Field(..., ge=0, example=42)
-    battery_health_pct: float = Field(..., ge=0, le=100, example=72.0)
-    storage_health_pct: float = Field(..., ge=0, le=100, example=85.0)
-    physical_condition: float = Field(..., ge=0.0, le=1.0, example=0.85)
-    eol_months: Optional[int] = Field(None, example=60)
-    max_lifespan_years: Optional[float] = Field(None, example=5.0)
-
-
-class ChipflationRequest(BaseModel):
-    category: str = Field(..., example="laptop")
-    current_price: float = Field(..., gt=0, example=75000)
-    historical_baseline: float = Field(..., gt=0, example=62000)
-    url_score: float = Field(default=70.0, ge=0, le=100, example=70.0)
-    urgency_factor: float = Field(default=1.0, example=1.0)
-    chipflation_index: Optional[float] = Field(None, example=1.18)
-
-
-class EMIRequest(BaseModel):
-    product_msrp: float = Field(..., gt=0, example=40000)
-    no_cost_discount: float = Field(default=0.0, ge=0, example=2500)
-    bank_processing_fee: float = Field(default=299.0, ge=0, example=299)
-    tenure_months: int = Field(..., gt=0, example=6)
-    forgone_cash_discount: float = Field(default=0.0, ge=0, example=1500)
-    exchange_bonus: float = Field(default=0.0, ge=0, example=0)
-
-
-class RecommendRequest(BaseModel):
-    category: str = Field(..., example="mobile")
-    use_case: str = Field(..., example="gaming")
-    max_budget_inr: float = Field(..., gt=0, example=35000)
-    min_ram_gb: Optional[int] = Field(None, example=8)
-    min_storage_gb: Optional[int] = Field(None, example=128)
-    prefer_refurbished: bool = Field(default=False)
-
-
-class FullDecisionRequest(BaseModel):
-    """
-    Single-call endpoint: combines device diagnosis, chipflation check,
-    product recommendation, and EMI audit in one shot.
-    """
-    # Current device
-    current_category: str = Field(..., example="mobile")
-    current_age_months: int = Field(..., ge=0, example=42)
-    current_battery_health_pct: float = Field(..., ge=0, le=100, example=72.0)
-    current_storage_health_pct: float = Field(..., ge=0, le=100, example=85.0)
-    current_physical_condition: float = Field(..., ge=0.0, le=1.0, example=0.85)
-
-    # Target purchase
-    target_use_case: str = Field(..., example="gaming")
-    max_budget_inr: float = Field(..., gt=0, example=35000)
-    target_current_price: float = Field(..., gt=0, example=32000)
-    target_historical_baseline: float = Field(..., gt=0, example=28000)
-
-    # Financing
-    emi_tenure_months: int = Field(default=6, gt=0)
-    bank_processing_fee: float = Field(default=299.0, ge=0)
-    forgone_cash_discount: float = Field(default=1500.0, ge=0)
-    no_cost_discount: float = Field(default=2000.0, ge=0)
-
-    # Optional
-    min_ram_gb: Optional[int] = None
-    min_storage_gb: Optional[int] = None
-    prefer_refurbished: bool = False
-
-
-# ─── Endpoints ───────────────────────────────────────────────────────────────
+# ─── Info ─────────────────────────────────────────────────────────────────────
 
 @app.get("/", tags=["Info"])
 def root():
     return {
-        "service": "AIDE-OS",
-        "version": "4.0.0-PROD",
-        "endpoints": [
-            "/api/v1/device-longevity",
-            "/api/v1/chipflation-index",
-            "/api/v1/emi-audit",
-            "/api/v1/recommend",
-            "/api/v1/full-decision",
-            "/api/v1/categories",
-            "/api/v1/health",
-        ],
+        "service": cfg.APP_NAME,
+        "version": cfg.APP_VERSION,
+        "status": "online",
         "docs": "/docs",
+        "endpoints": [
+            "GET  /api/v1/health",
+            "GET  /api/v1/categories",
+            "POST /api/v1/device-longevity",
+            "POST /api/v1/chipflation-index",
+            "POST /api/v1/emi-audit",
+            "POST /api/v1/recommend",
+            "POST /api/v1/full-decision",
+        ],
     }
 
 
 @app.get("/api/v1/health", tags=["Info"])
 def health():
-    return {"status": "healthy", "service": "AIDE-OS", "version": "4.0.0-PROD",
-            "timestamp": datetime.now().isoformat()}
+    return {
+        "status": "healthy",
+        "service": cfg.APP_NAME,
+        "version": cfg.APP_VERSION,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
 
 
 @app.get("/api/v1/categories", tags=["Info"])
-def list_categories():
-    """Returns all supported device categories and their use-cases."""
+def categories():
+    """All supported device categories and their valid use-case values."""
     return {
         "categories": {
             "mobile":   ["gaming", "daily_tasks", "multitasking", "photography"],
@@ -138,14 +84,17 @@ def list_categories():
     }
 
 
+# ─── Module 6: Device Longevity ───────────────────────────────────────────────
+
 @app.post("/api/v1/device-longevity", tags=["Module 6 — URL Engine"])
 def device_longevity(req: URLRequest):
     """
-    Calculates Useful Remaining Life (URL) score and remaining years.
-    Returns HOLD / CONSIDER_REPLACEMENT / REPLACE_IMMEDIATELY verdict.
+    Computes the Useful Remaining Life (URL) score for existing hardware.
+    Returns a HOLD / CONSIDER_REPLACEMENT / REPLACE_IMMEDIATELY verdict
+    with weighted component breakdown and targeted maintenance advice.
     """
     try:
-        result = calculate_url(URLInput(
+        r = calculate_url(URLInput(
             category=req.category,
             age_months=req.age_months,
             battery_health_pct=req.battery_health_pct,
@@ -155,24 +104,27 @@ def device_longevity(req: URLRequest):
             max_lifespan_years=req.max_lifespan_years,
         ))
         return {
-            "url_score_pct": result.url_score_pct,
-            "estimated_years_left": result.estimated_years_left,
-            "decision": result.decision,
-            "maintenance_advice": result.maintenance_advice,
-            "component_scores": result.component_scores,
+            "url_score_pct": r.url_score_pct,
+            "estimated_years_left": r.estimated_years_left,
+            "decision": r.decision,
+            "maintenance_advice": r.maintenance_advice,
+            "component_scores": r.component_scores,
         }
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e))
 
+
+# ─── Module 2: Chipflation Decision Index ─────────────────────────────────────
 
 @app.post("/api/v1/chipflation-index", tags=["Module 2 — Chipflation Engine"])
 def chipflation_index(req: ChipflationRequest):
     """
-    Calculates the Dynamic Buy-vs-Hold Decision Index (DI).
+    Calculates the Dynamic Buy-vs-Hold Decision Index (DI) based on
+    upstream DRAM/NAND component inflation vs. the historical retail baseline.
     Returns BUY_NOW / BUY_WITH_CASHBACK_EMI / HOLD_OR_BUY_REFURBISHED.
     """
     try:
-        result = calculate_di(ChipflationInput(
+        r = calculate_di(ChipflationInput(
             category=req.category,
             current_price=req.current_price,
             historical_baseline=req.historical_baseline,
@@ -181,28 +133,32 @@ def chipflation_index(req: ChipflationRequest):
             chipflation_index=req.chipflation_index,
         ))
         return {
-            "decision_index": result.decision_index,
-            "decision": result.decision,
-            "buy_window": result.buy_window,
-            "advice": result.advice,
-            "price_vs_baseline_pct": result.price_vs_baseline_pct,
-            "chipflation_index": result.chipflation_index,
-            "driver": result.driver,
-            "market_status": result.market_status,
-            "seasonal_hint": result.seasonal_hint,
+            "decision_index": r.decision_index,
+            "decision": r.decision,
+            "buy_window": r.buy_window,
+            "advice": r.advice,
+            "price_vs_baseline_pct": r.price_vs_baseline_pct,
+            "chipflation_index": r.chipflation_index,
+            "driver": r.driver,
+            "market_status": r.market_status,
+            "seasonal_hint": r.seasonal_hint,
         }
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e))
 
+
+# ─── Module 7: EMI Audit ──────────────────────────────────────────────────────
 
 @app.post("/api/v1/emi-audit", tags=["Module 7 — EMI Engine"])
 def emi_audit(req: EMIRequest):
     """
-    Audits No-Cost EMI plans. Exposes processing fees, GST on interest,
-    and forgone cash discounts to reveal the true effective outlay.
+    Audits "No-Cost EMI" plans and exposes:
+    bank processing fees, 18% GST on the interest component,
+    and the forgone upfront cash/UPI discount.
+    Returns true effective outlay and a PAY_UPFRONT vs. EMI_ACCEPTABLE verdict.
     """
     try:
-        result = calculate_true_emi_cost(EMIInput(
+        r = calculate_true_emi_cost(EMIInput(
             product_msrp=req.product_msrp,
             no_cost_discount=req.no_cost_discount,
             bank_processing_fee=req.bank_processing_fee,
@@ -211,27 +167,30 @@ def emi_audit(req: EMIRequest):
             exchange_bonus=req.exchange_bonus,
         ))
         return {
-            "advertised_price": result.advertised_price,
-            "breakdown": result.breakdown,
-            "total_hidden_charges": result.total_hidden_charges,
-            "true_effective_outlay": result.true_effective_outlay,
-            "hidden_charge_pct": result.hidden_charge_pct,
-            "monthly_emi": result.monthly_emi,
-            "recommendation": result.recommendation,
-            "advice": result.advice,
+            "advertised_price": r.advertised_price,
+            "breakdown": r.breakdown,
+            "total_hidden_charges": r.total_hidden_charges,
+            "true_effective_outlay": r.true_effective_outlay,
+            "hidden_charge_pct": r.hidden_charge_pct,
+            "monthly_emi": r.monthly_emi,
+            "recommendation": r.recommendation,
+            "advice": r.advice,
         }
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e))
 
 
-@app.post("/api/v1/recommend", tags=["Module 3&4 — Recommendation Engine"])
+# ─── Module 3 & 4: Recommendations ───────────────────────────────────────────
+
+@app.post("/api/v1/recommend", tags=["Module 3 & 4 — Recommender"])
 def recommend(req: RecommendRequest):
     """
-    Returns primary recommendations, alternatives, and refurbished options
-    matched to the user's use-case, budget, and spec requirements.
+    Maps user workload, budget, and spec requirements to matched products.
+    Returns primary picks, alternatives, and certified refurbished options
+    sorted by use-case match score with chipflation risk ratings.
     """
     try:
-        results = recommend_products(RecommendationInput(
+        return recommend_products(RecommendationInput(
             category=req.category,
             use_case=req.use_case,
             max_budget_inr=req.max_budget_inr,
@@ -239,20 +198,21 @@ def recommend(req: RecommendRequest):
             min_storage_gb=req.min_storage_gb,
             prefer_refurbished=req.prefer_refurbished,
         ))
-        return results
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e))
 
 
-@app.post("/api/v1/full-decision", tags=["Combined Decision Engine"])
+# ─── Combined Master Endpoint ─────────────────────────────────────────────────
+
+@app.post("/api/v1/full-decision", tags=["Master — Full Decision Engine"])
 def full_decision(req: FullDecisionRequest):
     """
-    The master endpoint. Runs all four engines (URL + Chipflation + Recommend + EMI)
-    and returns a single consolidated decision object.
+    Single-call master endpoint. Runs all four engines in one lifecycle:
+    URL Assessment → Chipflation DI → Product Recommendations → EMI Audit.
+    Returns a consolidated master verdict with per-engine details.
     """
     try:
-        # 1. URL Assessment
-        url_result = calculate_url(URLInput(
+        url_r = calculate_url(URLInput(
             category=req.current_category,
             age_months=req.current_age_months,
             battery_health_pct=req.current_battery_health_pct,
@@ -260,16 +220,14 @@ def full_decision(req: FullDecisionRequest):
             physical_condition=req.current_physical_condition,
         ))
 
-        # 2. Chipflation DI (informed by URL score)
-        di_result = calculate_di(ChipflationInput(
+        di_r = calculate_di(ChipflationInput(
             category=req.current_category,
             current_price=req.target_current_price,
             historical_baseline=req.target_historical_baseline,
-            url_score=url_result.url_score_pct,
+            url_score=url_r.url_score_pct,
         ))
 
-        # 3. Recommendations
-        rec_result = recommend_products(RecommendationInput(
+        rec_r = recommend_products(RecommendationInput(
             category=req.current_category,
             use_case=req.target_use_case,
             max_budget_inr=req.max_budget_inr,
@@ -278,8 +236,7 @@ def full_decision(req: FullDecisionRequest):
             prefer_refurbished=req.prefer_refurbished,
         ))
 
-        # 4. EMI Audit
-        emi_result = calculate_true_emi_cost(EMIInput(
+        emi_r = calculate_true_emi_cost(EMIInput(
             product_msrp=req.target_current_price,
             no_cost_discount=req.no_cost_discount,
             bank_processing_fee=req.bank_processing_fee,
@@ -287,60 +244,51 @@ def full_decision(req: FullDecisionRequest):
             forgone_cash_discount=req.forgone_cash_discount,
         ))
 
-        # Master verdict
-        should_buy = (
-            url_result.decision == "REPLACE_IMMEDIATELY"
-            or (url_result.decision == "CONSIDER_REPLACEMENT"
-                and di_result.decision != "OVERPRICED_HIGH_INFLATION")
-        )
-
-        if url_result.decision == "HOLD_CURRENT_DEVICE":
-            master_verdict = "HOLD_CURRENT_DEVICE"
-            master_advice = url_result.maintenance_advice
-        elif di_result.decision == "OVERPRICED_HIGH_INFLATION":
-            master_verdict = "BUY_REFURBISHED_OR_WAIT"
-            master_advice = (
-                f"{di_result.advice} "
-                f"Current device can last ~{url_result.estimated_years_left} more years."
-            )
-        elif di_result.decision == "OPTIMAL_BUY_WINDOW":
-            master_verdict = "BUY_NOW"
-            master_advice = di_result.advice
+        # Master verdict logic
+        if url_r.decision == "HOLD_CURRENT_DEVICE":
+            verdict = "HOLD_CURRENT_DEVICE"
+            advice  = url_r.maintenance_advice
+        elif di_r.decision == "OVERPRICED_HIGH_INFLATION":
+            verdict = "BUY_REFURBISHED_OR_WAIT"
+            advice  = f"{di_r.advice} Your device has ~{url_r.estimated_years_left} yrs left."
+        elif di_r.decision == "OPTIMAL_BUY_WINDOW":
+            verdict = "BUY_NOW"
+            advice  = di_r.advice
         else:
-            master_verdict = "BUY_WITH_BEST_OFFER"
-            master_advice = di_result.advice
+            verdict = "BUY_WITH_BEST_OFFER"
+            advice  = di_r.advice
 
         return {
-            "master_verdict": master_verdict,
-            "master_advice": master_advice,
+            "master_verdict": verdict,
+            "master_advice": advice,
             "device_longevity": {
-                "url_score_pct": url_result.url_score_pct,
-                "estimated_years_left": url_result.estimated_years_left,
-                "decision": url_result.decision,
-                "maintenance_advice": url_result.maintenance_advice,
-                "component_scores": url_result.component_scores,
+                "url_score_pct": url_r.url_score_pct,
+                "estimated_years_left": url_r.estimated_years_left,
+                "decision": url_r.decision,
+                "maintenance_advice": url_r.maintenance_advice,
+                "component_scores": url_r.component_scores,
             },
             "market_analysis": {
-                "decision_index": di_result.decision_index,
-                "decision": di_result.decision,
-                "buy_window": di_result.buy_window,
-                "price_vs_baseline_pct": di_result.price_vs_baseline_pct,
-                "chipflation_index": di_result.chipflation_index,
-                "driver": di_result.driver,
-                "market_status": di_result.market_status,
-                "seasonal_hint": di_result.seasonal_hint,
+                "decision_index": di_r.decision_index,
+                "decision": di_r.decision,
+                "buy_window": di_r.buy_window,
+                "price_vs_baseline_pct": di_r.price_vs_baseline_pct,
+                "chipflation_index": di_r.chipflation_index,
+                "driver": di_r.driver,
+                "market_status": di_r.market_status,
+                "seasonal_hint": di_r.seasonal_hint,
             },
-            "recommendations": rec_result,
+            "recommendations": rec_r,
             "emi_audit": {
-                "advertised_price": emi_result.advertised_price,
-                "breakdown": emi_result.breakdown,
-                "total_hidden_charges": emi_result.total_hidden_charges,
-                "true_effective_outlay": emi_result.true_effective_outlay,
-                "hidden_charge_pct": emi_result.hidden_charge_pct,
-                "monthly_emi": emi_result.monthly_emi,
-                "recommendation": emi_result.recommendation,
-                "advice": emi_result.advice,
+                "advertised_price": emi_r.advertised_price,
+                "breakdown": emi_r.breakdown,
+                "total_hidden_charges": emi_r.total_hidden_charges,
+                "true_effective_outlay": emi_r.true_effective_outlay,
+                "hidden_charge_pct": emi_r.hidden_charge_pct,
+                "monthly_emi": emi_r.monthly_emi,
+                "recommendation": emi_r.recommendation,
+                "advice": emi_r.advice,
             },
         }
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e))

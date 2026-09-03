@@ -45,7 +45,6 @@ services:
     environment:
       DATABASE_URL: postgresql://aideuser:aidepass@postgres:5432/aideosdb
       REDIS_URL: redis://redis:6379
-      ENVIRONMENT: production
     ports:
       - "8000:8000"
     depends_on:
@@ -59,7 +58,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── React Frontend ─────────────────────────────────────────────────────────
+  # ── React Frontend (nginx) ────────────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
