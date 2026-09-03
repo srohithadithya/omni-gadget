@@ -15,6 +15,7 @@ from app.engines.url_engine import URLInput, calculate_url
 from app.engines.chipflation_engine import ChipflationInput, calculate_di
 from app.engines.emi_engine import EMIInput, calculate_true_emi_cost
 from app.engines.recommendation_engine import RecommendationInput, recommend_products
+from app.db import log_user_device, log_emi_audit
 
 cfg = get_settings()
 
@@ -103,6 +104,21 @@ def device_longevity(req: URLRequest):
             eol_months=req.eol_months,
             max_lifespan_years=req.max_lifespan_years,
         ))
+        # Log device telemetry to DB
+        log_user_device({
+            "session_id": None,
+            "category": req.category,
+            "device_brand": None,
+            "device_model": None,
+            "age_months": req.age_months,
+            "battery_health_pct": req.battery_health_pct,
+            "storage_health_pct": req.storage_health_pct,
+            "physical_condition": req.physical_condition,
+            "eol_months": req.eol_months,
+            "url_score_pct": r.url_score_pct,
+            "estimated_years_left": r.estimated_years_left,
+            "decision": r.decision,
+        })
         return {
             "url_score_pct": r.url_score_pct,
             "estimated_years_left": r.estimated_years_left,
@@ -257,6 +273,35 @@ def full_decision(req: FullDecisionRequest):
         else:
             verdict = "BUY_WITH_BEST_OFFER"
             advice  = di_r.advice
+
+        # Log to DB
+        log_user_device({
+            "session_id": None,
+            "category": req.current_category,
+            "device_brand": None,
+            "device_model": None,
+            "age_months": req.current_age_months,
+            "battery_health_pct": req.current_battery_health_pct,
+            "storage_health_pct": req.current_storage_health_pct,
+            "physical_condition": req.current_physical_condition,
+            "eol_months": None,
+            "url_score_pct": url_r.url_score_pct,
+            "estimated_years_left": url_r.estimated_years_left,
+            "decision": url_r.decision,
+        })
+        log_emi_audit({
+            "gadget_id": None,
+            "session_id": None,
+            "product_msrp": req.target_current_price,
+            "no_cost_discount": req.no_cost_discount,
+            "bank_processing_fee": req.bank_processing_fee,
+            "tenure_months": req.emi_tenure_months,
+            "forgone_cash_discount": req.forgone_cash_discount,
+            "exchange_bonus": 0.0,
+            "total_hidden_charges": emi_r.total_hidden_charges,
+            "true_effective_outlay": emi_r.true_effective_outlay,
+            "recommendation": emi_r.recommendation,
+        })
 
         return {
             "master_verdict": verdict,
