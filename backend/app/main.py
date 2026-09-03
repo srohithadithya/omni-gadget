@@ -73,6 +73,12 @@ def root():
     }
 
 
+@app.get("/health", tags=["Info"])
+def health_root():
+    """Simple health check for Render/production load balancers."""
+    return {"status": "ok"}
+
+
 @app.get("/api/v1/health", tags=["Info"])
 def health():
     return {

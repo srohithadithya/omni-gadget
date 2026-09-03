@@ -15,8 +15,17 @@ class Settings:
     # ── Database ──────────────────────────────────────────────────────────────
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",
-        "postgresql://aideuser:aidepass@localhost:5432/aideosdb"
+        "postgresql://aideuser:***@localhost:5432/aideosdb"
     )
+
+    @staticmethod
+    def _normalize_db_url(url: str) -> str:
+        """Normalize database URL: postgres:// -> postgresql://, ensure sslmode=require for cloud DBs."""
+        if url.startswith("postgres://"):
+            url = "postgresql://" + url[len("postgres://"):]
+        if url.startswith("postgresql://") and "sslmode=" not in url:
+            url += "?sslmode=require"
+        return url
 
     # ── Redis ─────────────────────────────────────────────────────────────────
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379")
@@ -31,4 +40,6 @@ class Settings:
 
 @lru_cache()
 def get_settings() -> Settings:
-    return Settings()
+    s = Settings()
+    s.DATABASE_URL = s._normalize_db_url(s.DATABASE_URL)
+    return s
