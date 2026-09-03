@@ -1,0 +1,55 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Render Blueprint — AIDE-OS Zero-Cost Production Deployment
+# ═══════════════════════════════════════════════════════════════════════════════
+# Provision:
+#   - Neon PostgreSQL  → set DATABASE_URL as a secret
+#   - Upstash Redis    → set REDIS_URL as a secret
+#   - Render Web       → FastAPI backend (free plan)
+#   - Render Worker    → Telegram bot (free plan)
+#
+# Deploy with:
+#   render blueprint apply
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+  # ── FastAPI Backend ───────────────────────────────────────────────────────────
+  - name: aide-os-api
+    type: web
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    envVars:
+      # External databases (set via Render Dashboard → Environment)
+      - key: DATABASE_URL
+        sync: false  # set manually from Neon connection string
+      - key: REDIS_URL
+        sync: false  # set manually from Upstash connection string
+      # App secrets
+      - key: SECRET_KEY
+        generateValue: true  # auto-generate on first deploy
+      - key: DEBUG
+        value: "false"
+      - key: ENVIRONMENT
+        value: "production"
+      # CORS — update with your Vercel frontend URL after deploy
+      - key: CORS_ORIGINS
+        value: '["https://aide-os.vercel.app","http://localhost:3000"]'
+
+  # ── Telegram Bot (Background Worker) ─────────────────────────────────────────
+  - name: aide-os-bot
+    type: worker
+    runtime: python
+    plan: free
+    rootDir: bot
+    buildCommand: pip install -r requirements.txt
+    startCommand: python telegram_bot.py
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: BOT_CHAT_ID
+        sync: false
