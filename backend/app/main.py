@@ -15,7 +15,7 @@ from app.engines.url_engine import URLInput, calculate_url
 from app.engines.chipflation_engine import ChipflationInput, calculate_di
 from app.engines.emi_engine import EMIInput, calculate_true_emi_cost
 from app.engines.recommendation_engine import RecommendationInput, recommend_products
-from app.db import log_user_device, log_emi_audit
+from app.db import log_user_device, log_emi_audit, update_chipflation_index, get_latest_chipflation_all
 
 cfg = get_settings()
 
@@ -216,6 +216,42 @@ def recommend(req: RecommendRequest):
         ))
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
+
+
+# ─── Admin: Chipflation Index Management ─────────────────────────────────────
+
+@app.get("/api/v1/admin/chipflation/latest", tags=["Admin"])
+def chipflation_latest():
+    """Get latest chipflation_index rows per component for dashboard."""
+    try:
+        rows = get_latest_chipflation_all()
+        return {
+            "components": [
+                {
+                    "component_type": r["component_type"],
+                    "spot_price_usd": float(r["spot_price_usd"]),
+                    "mom_growth_pct": float(r["mom_growth_pct"]),
+                    "yoy_growth_pct": float(r["yoy_growth_pct"]),
+                    "source": r["source"],
+                    "recorded_at": r["recorded_at"].isoformat() if r["recorded_at"] else None,
+                }
+                for r in rows
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/admin/chipflation/update", tags=["Admin"])
+def chipflation_update(component_type: str, spot_price_usd: float,
+                       mom_growth_pct: float, yoy_growth_pct: float,
+                       source: str = "admin"):
+    """Insert a new chipflation data point. Requires component_type (LPDDR5X, DDR5_SODIMM, etc.)."""
+    try:
+        update_chipflation_index(component_type, spot_price_usd, mom_growth_pct, yoy_growth_pct, source)
+        return {"status": "ok", "component": component_type, "message": "Chipflation index updated"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ─── Combined Master Endpoint ─────────────────────────────────────────────────

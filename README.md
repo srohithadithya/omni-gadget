@@ -341,6 +341,8 @@ Base URL (local dev): `http://localhost:8001`
 | `POST` | `/api/v1/emi-audit` | 7 | True cost, hidden charge breakdown, verdict |
 | `POST` | `/api/v1/recommend` | 3 & 4 | Ranked products, alternatives, refurbished options |
 | `POST` | `/api/v1/full-decision` | All | Combined single-call master decision engine |
+| `GET` | `/api/v1/admin/chipflation/latest` | Admin | Latest chipflation data per component |
+| `POST` | `/api/v1/admin/chipflation/update` | Admin | Insert new chipflation data point |
 
 Full interactive docs available at `/docs` (Swagger UI) and `/redoc` (ReDoc).
 
@@ -431,6 +433,10 @@ curl -X POST http://localhost:8001/api/v1/full-decision \
 - [x] React multi-page frontend
 - [x] PostgreSQL schema + seed data
 - [x] Docker Compose stack
+- [x] Admin chipflation management endpoints
+- [x] DB-backed product catalogue (100+ products)
+- [x] Device telemetry + EMI audit logging
+- [x] Affiliate buy buttons (Amazon/Flipkart/EarnKaro)
 - [ ] Live e-commerce price scraper (Amazon / Flipkart)
 - [ ] TrendForce / DRAMeXchange API integration for real-time chipflation index
 - [ ] Telegram / WhatsApp price-drop notification bot

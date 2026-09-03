@@ -50,11 +50,23 @@ SEASONAL_HINTS = {
 }
 
 
+def _get_profile(cat: str) -> dict:
+    """Try DB first, fall back to static dict."""
+    try:
+        from app.db import get_chipflation_profile
+        db_profile = get_chipflation_profile(cat)
+        if db_profile:
+            return db_profile
+    except Exception:
+        pass
+    return CATEGORY_CHIPFLATION.get(cat, {"index": 1.10, "driver": "Moderate inflation"})
+
+
 def calculate_di(inp: ChipflationInput) -> ChipflationResult:
     cat = inp.category.lower()
-    profile = CATEGORY_CHIPFLATION.get(cat, {"index": 1.10, "driver": "Moderate inflation"})
-    ci = inp.chipflation_index if inp.chipflation_index is not None else profile["index"]
-    driver = profile["driver"]
+    profile = _get_profile(cat)
+    ci = inp.chipflation_index if inp.chipflation_index is not None else profile.get("index", 1.10)
+    driver = profile.get("driver", "Moderate inflation")
 
     # DI formula from spec
     price_inflation_factor = (ci * inp.current_price) / inp.historical_baseline

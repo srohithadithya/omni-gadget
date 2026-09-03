@@ -299,9 +299,47 @@ class ProductMatch:
     is_primary: bool
 
 
+def _get_catalogue(cat: str) -> list:
+    """Try DB first, fall back to static PRODUCT_CATALOGUE."""
+    try:
+        from app.db import query_products
+        rows = query_products(cat, [], inp.max_budget_inr if hasattr(inp, 'max_budget_inr') else 999999)
+        if rows:
+            return [_pg_row_to_product(r) for r in rows]
+    except Exception:
+        pass
+    return PRODUCT_CATALOGUE.get(cat, [])
+
+
+def _pg_row_to_product(row) -> dict:
+    """Convert a psycopg2 RealDictRow to the dict format the scoring engine expects."""
+    return {
+        'id': str(row.get('gadget_id', '')),
+        'brand': row.get('brand', ''),
+        'model_name': row.get('model_name', ''),
+        'tier': row.get('tier', ''),
+        'price_inr': float(row.get('current_price', 0)),
+        'baseline_inr': float(row.get('historical_baseline', 0)),
+        'ram_gb': row.get('ram_gb'),
+        'storage_gb': row.get('storage_gb'),
+        'display': row.get('display_spec', ''),
+        'display_spec': row.get('display_spec', ''),
+        'use_cases': row.get('use_cases', []),
+        'chipflation_risk': row.get('chipflation_risk', 'medium'),
+        'pros': row.get('pros', []),
+        'cons': row.get('cons', []),
+        'rating': float(row.get('rating', 4.0)),
+        'reviews': row.get('review_count', 0),
+        'review_count': row.get('review_count', 0),
+        'refurbished_available': row.get('refurb_available', False),
+        'refurb_price_inr': float(row['refurb_price']) if row.get('refurb_price') else None,
+        'refurb_source': row.get('refurb_source'),
+    }
+
+
 def recommend_products(inp: RecommendationInput) -> dict:
     cat = inp.category.lower()
-    catalogue = PRODUCT_CATALOGUE.get(cat, [])
+    catalogue = _get_catalogue(cat)
 
     if not catalogue:
         return {"primary": [], "alternatives": [], "refurbished": []}
@@ -361,6 +399,11 @@ def recommend_products(inp: RecommendationInput) -> dict:
             value_verdict = "OVERPRICED"
 
         scored.append((score, p, value_verdict))
+
+    # Normalize keys: ensure model_name exists (static catalogue uses 'model')
+    for score, p, vv in scored:
+        if 'model' in p and 'model_name' not in p:
+            p['model_name'] = p['model']
 
     scored.sort(key=lambda x: x[0], reverse=True)
 
