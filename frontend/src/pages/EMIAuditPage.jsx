@@ -25,6 +25,9 @@ export default function EMIAuditPage() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [scheduleData, setScheduleData] = useState(null);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleError, setScheduleError] = useState(null);
 
   function setField(k, v) { setForm(f => ({ ...f, [k]: v })); }
 
@@ -38,10 +41,11 @@ export default function EMIAuditPage() {
       exchange_bonus: 0,
     });
     setResult(null);
+    setScheduleData(null);
   }
 
   async function run() {
-    setLoading(true); setError(null);
+    setLoading(true); setError(null); setScheduleData(null);
     try {
       const { data } = await apiClient.emiAudit(form);
       setResult(data);
@@ -49,6 +53,23 @@ export default function EMIAuditPage() {
       setError(e.response?.data?.detail || e.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchSchedule() {
+    setScheduleLoading(true); setScheduleError(null);
+    try {
+      const { data } = await apiClient.emiSchedule({
+        product_msrp: form.product_msrp,
+        annual_rate_pct: 0,  // No-Cost EMI
+        tenure_months: form.tenure_months,
+        no_cost_discount: form.no_cost_discount,
+      });
+      setScheduleData(data);
+    } catch (e) {
+      setScheduleError(e.response?.data?.detail || e.message);
+    } finally {
+      setScheduleLoading(false);
     }
   }
 
@@ -296,6 +317,90 @@ export default function EMIAuditPage() {
                     </tr>
                   </tbody>
                 </table>
+              </div>
+
+              {/* View EMI Schedule button */}
+              <div className="card" style={{ marginTop: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="card-title" style={{ margin: 0 }}>EMI Amortization Schedule</div>
+                  <button
+                    className="btn btn-primary"
+                    onClick={fetchSchedule}
+                    disabled={scheduleLoading}
+                    style={{ fontSize: 12, padding: '8px 18px' }}
+                  >
+                    {scheduleLoading ? <><span className="btn-spinner" />Loading…</> : '📅 View EMI Schedule'}
+                  </button>
+                </div>
+
+                {scheduleError && (
+                  <div className="alert alert-red" style={{ marginTop: 12 }}>
+                    <span className="alert-icon">⚠️</span>{scheduleError}
+                  </div>
+                )}
+
+                {scheduleData && (
+                  <div style={{ marginTop: 12 }}>
+                    {scheduleData.is_no_cost_emi && scheduleData.no_cost_note && (
+                      <div className="alert alert-yellow" style={{ marginBottom: 12, fontSize: 12 }}>
+                        <span className="alert-icon">ℹ️</span>
+                        <div>{scheduleData.no_cost_note}</div>
+                      </div>
+                    )}
+
+                    <div style={{ overflowX: 'auto' }}>
+                      <table className="table">
+                        <thead>
+                          <tr>
+                            <th style={{ textAlign: 'center' }}>Month</th>
+                            <th style={{ textAlign: 'right' }}>Opening Balance</th>
+                            <th style={{ textAlign: 'right' }}>EMI</th>
+                            <th style={{ textAlign: 'right' }}>Principal</th>
+                            <th style={{ textAlign: 'right' }}>Interest</th>
+                            <th style={{ textAlign: 'right' }}>Closing Balance</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {scheduleData.schedule.map(row => (
+                            <tr key={row.month}>
+                              <td style={{ textAlign: 'center' }}>{row.month}</td>
+                              <td className="right">{fmt(row.opening_balance)}</td>
+                              <td className="right">{fmt(row.emi)}</td>
+                              <td className="right">{fmt(row.principal_component)}</td>
+                              <td className="right" style={{ color: row.interest_component > 0 ? 'var(--danger)' : 'var(--text-muted)' }}>
+                                {fmt(row.interest_component)}
+                              </td>
+                              <td className="right">{fmt(row.closing_balance)}</td>
+                            </tr>
+                          ))}
+                          <tr className="total">
+                            <td style={{ textAlign: 'center' }}><strong>Total</strong></td>
+                            <td></td>
+                            <td className="right"><strong>{fmt(scheduleData.schedule.reduce((s, r) => s + r.emi, 0))}</strong></td>
+                            <td className="right"><strong>{fmt(scheduleData.totals.total_principal)}</strong></td>
+                            <td className="right" style={{ color: scheduleData.totals.total_interest > 0 ? 'var(--danger)' : 'var(--text-muted)' }}>
+                              <strong>{fmt(scheduleData.totals.total_interest)}</strong>
+                            </td>
+                            <td className="right"><strong>{fmt(scheduleData.totals.total_cost)}</strong></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div style={{ marginTop: 8, fontSize: 11, color: 'var(--text-muted)', display: 'flex', gap: 20 }}>
+                      <span>Principal: <strong>{fmt(scheduleData.totals.total_principal)}</strong></span>
+                      <span>Interest: <strong>{fmt(scheduleData.totals.total_interest)}</strong></span>
+                      <span>GST on Interest (18%): <strong>{fmt(scheduleData.totals.total_gst_on_interest)}</strong></span>
+                      <span>Total Cost: <strong style={{ color: 'var(--primary-light)' }}>{fmt(scheduleData.totals.total_cost)}</strong></span>
+                    </div>
+                  </div>
+                )}
+
+                {!scheduleData && !scheduleError && (
+                  <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', fontSize: 13 }}>
+                    Click "View EMI Schedule" to see the full month-by-month amortization breakdown
+                  </div>
+                )}
               </div>
             </>
           ) : (

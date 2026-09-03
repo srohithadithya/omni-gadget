@@ -14,6 +14,7 @@ const apiClient = {
   deviceLongevity: (data) => API.post('/api/v1/device-longevity', data),
   chipflationIndex: (data) => API.post('/api/v1/chipflation-index', data),
   emiAudit: (data) => API.post('/api/v1/emi-audit', data),
+  emiSchedule: (data) => API.post('/api/v1/emi-schedule', data),
   recommend: (data) => API.post('/api/v1/recommend', data),
   fullDecision: (data) => API.post('/api/v1/full-decision', data),
 };

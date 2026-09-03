@@ -8,12 +8,13 @@ from datetime import datetime
 
 from app.config import get_settings
 from app.schemas import (
-    URLRequest, ChipflationRequest, EMIRequest,
+    URLRequest, ChipflationRequest, EMIRequest, EMIScheduleRequest,
     RecommendRequest, FullDecisionRequest
 )
 from app.engines.url_engine import URLInput, calculate_url
 from app.engines.chipflation_engine import ChipflationInput, calculate_di
 from app.engines.emi_engine import EMIInput, calculate_true_emi_cost
+from app.engines.emi_schedule import generate_emi_schedule
 from app.engines.recommendation_engine import RecommendationInput, recommend_products
 from app.db import log_user_device, log_emi_audit, update_chipflation_index, get_latest_chipflation_all
 
@@ -54,6 +55,7 @@ def root():
             "POST /api/v1/device-longevity",
             "POST /api/v1/chipflation-index",
             "POST /api/v1/emi-audit",
+            "POST /api/v1/emi-schedule",
             "POST /api/v1/recommend",
             "POST /api/v1/full-decision",
         ],
@@ -191,6 +193,49 @@ def emi_audit(req: EMIRequest):
             "monthly_emi": r.monthly_emi,
             "recommendation": r.recommendation,
             "advice": r.advice,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
+@app.post("/api/v1/emi-schedule", tags=["Module 7 — EMI Engine"])
+def emi_schedule(req: EMIScheduleRequest):
+    """
+    Generate a month-by-month amortization schedule for an EMI plan.
+    For No-Cost EMI (annual_rate_pct=0), interest is zero but GST on the
+    seller-subsidised interest is noted as a buyer obligation.
+    """
+    try:
+        principal = req.product_msrp - req.no_cost_discount
+        if principal < 0:
+            raise ValueError("no_cost_discount cannot exceed product_msrp")
+
+        schedule = generate_emi_schedule(
+            principal=principal,
+            annual_rate_pct=req.annual_rate_pct,
+            tenure_months=req.tenure_months,
+        )
+
+        total_interest = round(sum(row["interest_component"] for row in schedule), 2)
+        total_gst_on_interest = round(total_interest * cfg.GST_RATE, 2)
+        total_cost = round(principal + total_interest + total_gst_on_interest, 2)
+
+        is_no_cost = req.annual_rate_pct == 0 or req.no_cost_discount > 0
+
+        return {
+            "schedule": schedule,
+            "totals": {
+                "total_principal": round(principal, 2),
+                "total_interest": total_interest,
+                "total_gst_on_interest": total_gst_on_interest,
+                "total_cost": total_cost,
+            },
+            "is_no_cost_emi": is_no_cost,
+            "no_cost_note": (
+                "This is a No-Cost EMI plan. The interest is absorbed by the seller, "
+                "but the buyer is still charged 18% GST on the interest component."
+                if is_no_cost else None
+            ),
         }
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))

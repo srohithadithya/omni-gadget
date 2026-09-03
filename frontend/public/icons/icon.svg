@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bolt" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Chip base — rounded square -->
+  <rect x="128" y="128" width="256" height="256" rx="32" ry="32" fill="#1e1b4b" stroke="#6366f1" stroke-width="6"/>
+
+  <!-- Chip inner die -->
+  <rect x="168" y="168" width="176" height="176" rx="12" ry="12" fill="#0f1117" stroke="#6366f1" stroke-width="2" opacity="0.6"/>
+
+  <!-- Chip pins — top -->
+  <rect x="188" y="108" width="16" height="24" rx="3" fill="#6366f1"/>
+  <rect x="228" y="108" width="16" height="24" rx="3" fill="#6366f1"/>
+  <rect x="268" y="108" width="16" height="24" rx="3" fill="#6366f1"/>
+  <rect x="308" y="108" width="16" height="24" rx="3" fill="#6366f1"/>
+
+  <!-- Chip pins — bottom -->
+  <rect x="188" y="380" width="16" height="24" rx="3" fill="#6366f1"/>
+  <rect x="228" y="380" width="16" height="24" rx="3" fill="#6366f1"/>
+  <rect x="268" y="380" width="16" height="24" rx="3" fill="#6366f1"/>
+  <rect x="308" y="380" width="16" height="24" rx="3" fill="#6366f1"/>
+
+  <!-- Chip pins — left -->
+  <rect x="108" y="188" width="24" height="16" rx="3" fill="#6366f1"/>
+  <rect x="108" y="228" width="24" height="16" rx="3" fill="#6366f1"/>
+  <rect x="108" y="268" width="24" height="16" rx="3" fill="#6366f1"/>
+  <rect x="108" y="308" width="24" height="16" rx="3" fill="#6366f1"/>
+
+  <!-- Chip pins — right -->
+  <rect x="380" y="188" width="24" height="16" rx="3" fill="#6366f1"/>
+  <rect x="380" y="228" width="24" height="16" rx="3" fill="#6366f1"/>
+  <rect x="380" y="268" width="24" height="16" rx="3" fill="#6366f1"/>
+  <rect x="380" y="308" width="24" height="16" rx="3" fill="#6366f1"/>
+
+  <!-- Lightning bolt — centered on chip -->
+  <path d="
+    M 290 170
+    L 230 270
+    L 270 270
+    L 222 342
+    L 310 248
+    L 268 248
+    L 310 170
+    Z
+  " fill="url(#bolt)" stroke="#c7d2fe" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>
