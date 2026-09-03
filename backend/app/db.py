@@ -171,3 +171,94 @@ def log_emi_audit(data: dict):
         conn.rollback()
     finally:
         conn.close()
+
+
+def get_user_history(session_id: str, limit: int = 10):
+    """Return last *limit* user_devices rows for *session_id*, newest first."""
+    cfg = get_settings()
+    try:
+        conn = psycopg2.connect(cfg.DATABASE_URL, cursor_factory=RealDictCursor)
+    except Exception:
+        return []
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT device_id, session_id, category, device_brand, device_model,
+                       age_months, battery_health_pct, storage_health_pct,
+                       physical_condition, eol_months, url_score_pct,
+                       estimated_years_left, decision, created_at
+                FROM user_devices
+                WHERE session_id = %s
+                ORDER BY created_at DESC
+                LIMIT %s
+                """,
+                (session_id, limit),
+            )
+            rows = cur.fetchall()
+            return [
+                {k: (v.isoformat() if hasattr(v, "isoformat") else v) for k, v in r.items()}
+                for r in rows
+            ]
+    except Exception:
+        return []
+    finally:
+        conn.close()
+
+
+def get_popular_products():
+    """Return top 5 most recommended product categories from user_devices."""
+    cfg = get_settings()
+    try:
+        conn = psycopg2.connect(cfg.DATABASE_URL, cursor_factory=RealDictCursor)
+    except Exception:
+        return []
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT category, COUNT(*) AS recommendation_count
+                FROM user_devices
+                WHERE decision IS NOT NULL
+                GROUP BY category
+                ORDER BY recommendation_count DESC
+                LIMIT 5
+                """
+            )
+            return cur.fetchall()
+    except Exception:
+        return []
+    finally:
+        conn.close()
+
+
+def get_market_trends():
+    """Return average url_score_pct grouped by date (day) over the last 30 days."""
+    cfg = get_settings()
+    try:
+        conn = psycopg2.connect(cfg.DATABASE_URL, cursor_factory=RealDictCursor)
+    except Exception:
+        return []
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT DATE(created_at) AS date,
+                       ROUND(AVG(url_score_pct), 2) AS avg_url_score,
+                       COUNT(*) AS sample_size
+                FROM user_devices
+                WHERE url_score_pct IS NOT NULL
+                  AND created_at >= NOW() - INTERVAL '30 days'
+                GROUP BY DATE(created_at)
+                ORDER BY date ASC
+                """
+            )
+            rows = cur.fetchall()
+            return [
+                {k: (v.isoformat() if hasattr(v, "isoformat") else v) for k, v in r.items()}
+                for r in rows
+            ]
+    except Exception:
+        return []
+    finally:
+        conn.close()

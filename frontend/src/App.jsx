@@ -7,6 +7,8 @@ import RecommendPage from './pages/RecommendPage';
 import EMIAuditPage from './pages/EMIAuditPage';
 import ChipflationPage from './pages/ChipflationPage';
 import FullDecisionPage from './pages/FullDecisionPage';
+import DashboardPage from './pages/DashboardPage';
+import TrendsPage from './pages/TrendsPage';
 import './index.css';
 
 function App() {
@@ -20,6 +22,8 @@ function App() {
           <Route path="/emi-audit" element={<EMIAuditPage />} />
           <Route path="/chipflation" element={<ChipflationPage />} />
           <Route path="/full-decision" element={<FullDecisionPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/trends" element={<TrendsPage />} />
         </Routes>
       </Layout>
     </Router>

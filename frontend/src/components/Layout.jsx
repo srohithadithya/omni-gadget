@@ -8,6 +8,8 @@ const NAV = [
   { path: '/emi-audit',   icon: '💳', label: 'EMI Audit' },
   { path: '/chipflation', icon: '📈', label: 'Chipflation Index' },
   { path: '/full-decision', icon: '⚡', label: 'Full Decision' },
+  { path: '/dashboard',    icon: '📋', label: 'My Dashboard' },
+  { path: '/trends',       icon: '📊', label: 'Market Trends' },
 ];
 
 export default function Layout({ children }) {
@@ -33,12 +35,12 @@ export default function Layout({ children }) {
             </button>
           ))}
         </nav>
-        <div className="sidebar-footer">
+        <div className="sidebar-footer" style={{ background: 'rgba(0,0,0,0.15)', borderRadius: '0 0 0 16px' }}>
           <div className="status-dot">
             <span className="dot" />
             Engine online
           </div>
-          <div style={{ marginTop: 8, fontSize: 10, color: 'var(--text-muted)' }}>
+          <div style={{ marginTop: 8, fontSize: 10, color: 'var(--text-muted)', lineHeight: 1.4 }}>
             AI-Driven Electronic<br />Device Ecosystem
           </div>
         </div>
