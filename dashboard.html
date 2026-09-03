@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIDE-OS Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--foreground);
+    background: transparent;
+    padding: 16px;
+  }
+
+  h1 { font-size: 15px; font-weight: 700; letter-spacing: 0.04em; margin-bottom: 2px; }
+  .subtitle { font-size: 11px; color: var(--muted-foreground); margin-bottom: 16px; }
+
+  /* Tab bar */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+  .tab {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 6px 6px 0 0;
+    color: var(--muted-foreground);
+    border: 1px solid transparent;
+    border-bottom: none;
+    background: transparent;
+    transition: color .15s, background .15s;
+    position: relative;
+    bottom: -1px;
+  }
+  .tab:hover { color: var(--foreground); }
+  .tab.active {
+    color: var(--foreground);
+    background: var(--card);
+    border-color: var(--border);
+    border-bottom-color: var(--card);
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Card */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .card-title { font-size: 11px; font-weight: 600; text-transform: uppercase;
+                letter-spacing: .06em; color: var(--muted-foreground); margin-bottom: 10px; }
+
+  /* Form grid */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  label { font-size: 11px; color: var(--muted-foreground); }
+  input, select {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--foreground);
+    font-size: 12px;
+    font-family: inherit;
+    padding: 5px 8px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+
+  /* Slider with value display */
+  .slider-row { display: flex; align-items: center; gap: 8px; }
+  input[type=range] {
+    flex: 1; border: none; padding: 0; cursor: pointer;
+    accent-color: var(--accent);
+  }
+  .slider-val { font-size: 12px; font-weight: 600; min-width: 36px; text-align: right; }
+
+  /* Run button */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent); color: var(--card);
+    border: none; border-radius: 7px;
+    font-size: 12px; font-weight: 600; font-family: inherit;
+    padding: 7px 18px; cursor: pointer;
+    transition: opacity .15s;
+    margin-top: 6px;
+  }
+  .btn:hover { opacity: .85; }
+  .btn:disabled { opacity: .4; cursor: default; }
+  .btn-spin { display: inline-block; width: 12px; height: 12px;
+              border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;
+              border-radius: 50%; animation: spin .6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Result area */
+  .result { margin-top: 12px; }
+  .verdict-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; padding: 5px 12px;
+    border-radius: 20px; margin-bottom: 10px;
+  }
+  .v-green  { background: rgba(34,197,94,.15);  color: #22c55e; }
+  .v-yellow { background: rgba(234,179,8,.15);  color: #eab308; }
+  .v-red    { background: rgba(239,68,68,.15);  color: #ef4444; }
+  .v-blue   { background: rgba(59,130,246,.15); color: #3b82f6; }
+
+  /* Stat grid */
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-bottom: 10px; }
+  .stat {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+  }
+  .stat-label { font-size: 10px; color: var(--muted-foreground); margin-bottom: 3px; }
+  .stat-value { font-size: 16px; font-weight: 700; }
+  .stat-sub { font-size: 10px; color: var(--muted-foreground); margin-top: 1px; }
+
+  /* Progress bar */
+  .progress-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .progress-label { font-size: 11px; color: var(--muted-foreground); min-width: 130px; }
+  .progress-bar-bg { flex: 1; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .progress-bar { height: 100%; border-radius: 99px; transition: width .5s ease; }
+  .progress-pct { font-size: 11px; font-weight: 600; min-width: 34px; text-align: right; }
+
+  /* Breakdown table */
+  .breakdown { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .breakdown td { padding: 5px 8px; border-bottom: 1px solid var(--border); }
+  .breakdown td:first-child { color: var(--muted-foreground); }
+  .breakdown td:last-child { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .breakdown tr.total td { border-top: 2px solid var(--border); border-bottom: none; }
+  .breakdown tr.total td:last-child { color: var(--accent); font-size: 13px; }
+  .breakdown tr.hidden-row td:last-child { color: #ef4444; }
+
+  /* Chipflation gauge */
+  .di-gauge { text-align: center; padding: 8px 0; }
+  .di-number { font-size: 42px; font-weight: 800; letter-spacing: -.02em; }
+  .di-label { font-size: 11px; color: var(--muted-foreground); }
+
+  .advice-box {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    font-size: 12px; line-height: 1.5;
+    margin-top: 10px;
+  }
+  .advice-box strong { display: block; font-size: 11px; text-transform: uppercase;
+                       letter-spacing: .05em; color: var(--muted-foreground); margin-bottom: 4px; }
+
+  .error-box { color: #ef4444; font-size: 12px; padding: 8px; background: rgba(239,68,68,.08);
+               border-radius: 6px; margin-top: 10px; }
+
+  .api-note { font-size: 10px; color: var(--muted-foreground); margin-top: 10px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<h1>⚡ AIDE-OS v4.0.0</h1>
+<p class="subtitle">AI-Driven Electronic Device Ecosystem — Live Decision Engine</p>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('longevity', this)">🔋 Longevity</button>
+  <button class="tab" onclick="switchTab('emi', this)">💳 EMI Audit</button>
+  <button class="tab" onclick="switchTab('chipflation', this)">📈 Chipflation DI</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ LONGEVITY -->
+<div id="panel-longevity" class="panel active">
+  <div class="card">
+    <div class="card-title">Device Telemetry Input</div>
+    <div class="grid" style="margin-bottom:10px">
+      <div class="field">
+        <label>Category</label>
+        <select id="l-category">
+          <option>Mobile</option><option>Laptop</option><option>Audio</option>
+          <option>Video</option><option>Memory</option><option>Wearable</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Device Age (months)</label>
+        <input type="number" id="l-age" value="42" min="0" max="240">
+      </div>
+      <div class="field">
+        <label>EOL Limit (months)</label>
+        <input type="number" id="l-eol" value="60" min="12" max="120">
+      </div>
+      <div class="field">
+        <label>Max Lifespan (years)</label>
+        <input type="number" id="l-lifespan" value="5" min="1" max="15" step="0.5">
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:8px">
+      <label>Battery Health — <span id="l-bh-val">72</span>%</label>
+      <div class="slider-row">
+        <input type="range" id="l-battery" min="0" max="100" value="72"
+               oninput="document.getElementById('l-bh-val').textContent=this.value">
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:8px">
+      <label>Storage Health — <span id="l-sh-val">85</span>%</label>
+      <div class="slider-row">
+        <input type="range" id="l-storage" min="0" max="100" value="85"
+               oninput="document.getElementById('l-sh-val').textContent=this.value">
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:10px">
+      <label>Physical Condition — <span id="l-ph-val">0.85</span> / 1.0</label>
+      <div class="slider-row">
+        <input type="range" id="l-physical" min="0" max="100" value="85"
+               oninput="document.getElementById('l-ph-val').textContent=(this.value/100).toFixed(2)">
+      </div>
+    </div>
+    <button class="btn" id="btn-longevity" onclick="runLongevity()">
+      <span>Calculate URL Score</span>
+    </button>
+  </div>
+  <div id="result-longevity" class="result"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ EMI -->
+<div id="panel-emi" class="panel">
+  <div class="card">
+    <div class="card-title">No-Cost EMI Audit Inputs</div>
+    <div class="grid" style="margin-bottom:10px">
+      <div class="field">
+        <label>Product MSRP (₹)</label>
+        <input type="number" id="e-msrp" value="40000" min="0">
+      </div>
+      <div class="field">
+        <label>Seller's Interest Subsidy (₹)</label>
+        <input type="number" id="e-discount" value="2500" min="0">
+      </div>
+      <div class="field">
+        <label>Bank Processing Fee (₹)</label>
+        <input type="number" id="e-pfee" value="299" min="0">
+      </div>
+      <div class="field">
+        <label>EMI Tenure (months)</label>
+        <input type="number" id="e-tenure" value="6" min="1" max="60">
+      </div>
+      <div class="field" style="grid-column:1/-1">
+        <label>Forgone Upfront Cash/UPI Discount (₹)</label>
+        <input type="number" id="e-forgone" value="1500" min="0">
+      </div>
+    </div>
+    <button class="btn" id="btn-emi" onclick="runEMI()">
+      <span>Expose Hidden Charges</span>
+    </button>
+  </div>
+  <div id="result-emi" class="result"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ CHIPFLATION -->
+<div id="panel-chipflation" class="panel">
+  <div class="card">
+    <div class="card-title">Market Pricing Inputs</div>
+    <div class="grid three">
+      <div class="field">
+        <label>Category</label>
+        <select id="c-category">
+          <option>Laptop</option><option>Mobile</option><option>Memory</option>
+          <option>Audio</option><option>Video</option><option>Wearable</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Current Market Price (₹)</label>
+        <input type="number" id="c-current" value="75000" min="0">
+      </div>
+      <div class="field">
+        <label>Historical Baseline (₹)</label>
+        <input type="number" id="c-baseline" value="62000" min="1">
+      </div>
+    </div>
+    <div class="field" style="margin-top:10px;margin-bottom:10px">
+      <label>Component Chipflation Index — <span id="c-ci-val">1.18</span>×</label>
+      <div class="slider-row">
+        <input type="range" id="c-ci" min="80" max="200" value="118"
+               oninput="document.getElementById('c-ci-val').textContent=(this.value/100).toFixed(2)">
+      </div>
+    </div>
+    <button class="btn" id="btn-chipflation" onclick="runChipflation()">
+      <span>Compute Decision Index</span>
+    </button>
+  </div>
+  <div id="result-chipflation" class="result"></div>
+</div>
+
+<p class="api-note">
+  Live API at <a href="http://localhost:8000/docs" target="_blank">localhost:8000/docs</a> ·
+  AIDE-OS v4.0.0-PROD
+</p>
+
+<script>
+const API = 'http://localhost:8000';
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (loading) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spin"></span><span>Running…</span>';
+  } else {
+    btn.disabled = false;
+  }
+}
+
+function verdictClass(decision) {
+  if (['HOLD_CURRENT_DEVICE','OPTIMAL_BUY_WINDOW','NO_COST_EMI_ACCEPTABLE'].includes(decision)) return 'v-green';
+  if (['CONSIDER_REPLACEMENT','MODERATE_PRICING','CONDITIONAL_BUY','RECONSIDER_EMI'].includes(decision)) return 'v-yellow';
+  if (['REPLACE_HARDWARE','OVERPRICED_HOLD','WAIT_FOR_CORRECTION','PAY_UPFRONT_CASH'].includes(decision)) return 'v-red';
+  return 'v-blue';
+}
+
+function barColor(pct) {
+  if (pct >= 70) return '#22c55e';
+  if (pct >= 40) return '#eab308';
+  return '#ef4444';
+}
+
+async function runLongevity() {
+  setLoading('btn-longevity', true);
+  const body = {
+    category: document.getElementById('l-category').value,
+    age_months: +document.getElementById('l-age').value,
+    battery_health_pct: +document.getElementById('l-battery').value,
+    storage_health_pct: +document.getElementById('l-storage').value,
+    eol_months: +document.getElementById('l-eol').value,
+    physical_condition: +document.getElementById('l-physical').value / 100,
+    max_hardware_lifespan_years: +document.getElementById('l-lifespan').value
+  };
+  try {
+    const res = await fetch(`${API}/api/v1/evaluate-device-longevity`, {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    const d = await res.json();
+    const vc = verdictClass(d.decision);
+    const sc = d.component_scores;
+    document.getElementById('result-longevity').innerHTML = `
+      <div class="verdict-badge ${vc}">
+        ${d.decision === 'HOLD_CURRENT_DEVICE' ? '✅' : d.decision === 'CONSIDER_REPLACEMENT' ? '⚠️' : '🔴'}
+        ${d.decision.replace(/_/g,' ')}
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">URL Score</div>
+          <div class="stat-value" style="color:${barColor(d.url_score_pct)}">${d.url_score_pct}%</div>
+          <div class="stat-sub">threshold: 60%</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Years Remaining</div>
+          <div class="stat-value">${d.estimated_years_left}</div>
+          <div class="stat-sub">est. useful life</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Component Breakdown</div>
+        ${[
+          ['Battery Health (35%)', sc.battery_normalized],
+          ['Storage Health (25%)', sc.storage_normalized],
+          ['Age Factor (25%)',     sc.age_factor],
+          ['Physical Condition (15%)', sc.physical_condition]
+        ].map(([lbl,val]) => `
+          <div class="progress-wrap">
+            <span class="progress-label">${lbl}</span>
+            <div class="progress-bar-bg">
+              <div class="progress-bar" style="width:${val}%;background:${barColor(val)}"></div>
+            </div>
+            <span class="progress-pct">${val}%</span>
+          </div>`).join('')}
+      </div>
+      <div class="advice-box">
+        <strong>Recommendation</strong>
+        ${d.maintenance_step}
+      </div>`;
+  } catch(e) {
+    document.getElementById('result-longevity').innerHTML = `<div class="error-box">⚠️ API error: ${e.message}</div>`;
+  }
+  const btn = document.getElementById('btn-longevity');
+  btn.disabled = false;
+  btn.innerHTML = '<span>Calculate URL Score</span>';
+}
+
+async function runEMI() {
+  setLoading('btn-emi', true);
+  const body = {
+    product_msrp: +document.getElementById('e-msrp').value,
+    no_cost_discount: +document.getElementById('e-discount').value,
+    bank_processing_fee: +document.getElementById('e-pfee').value,
+    tenure_months: +document.getElementById('e-tenure').value,
+    forgone_cash_discount: +document.getElementById('e-forgone').value
+  };
+  try {
+    const res = await fetch(`${API}/api/v1/track-emi-hidden-charges`, {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    const d = await res.json();
+    const vc = verdictClass(d.recommendation);
+    const b = d.hidden_charges_breakdown;
+    const fmt = n => '₹' + n.toLocaleString('en-IN', {minimumFractionDigits:2});
+    document.getElementById('result-emi').innerHTML = `
+      <div class="verdict-badge ${vc}">
+        ${d.recommendation === 'NO_COST_EMI_ACCEPTABLE' ? '✅' : '🔴'}
+        ${d.recommendation.replace(/_/g,' ')}
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">True Outlay</div>
+          <div class="stat-value" style="font-size:13px">${fmt(d.true_effective_outlay)}</div>
+          <div class="stat-sub">vs advertised ${fmt(d.advertised_price)}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Hidden Charges</div>
+          <div class="stat-value" style="color:#ef4444;font-size:13px">${fmt(d.total_hidden_surcharges)}</div>
+          <div class="stat-sub">${d.hidden_charge_percentage}% of price</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Hidden Charge Breakdown</div>
+        <table class="breakdown">
+          <tr class="hidden-row"><td>Bank Processing Fee</td><td>${fmt(b.bank_processing_fee)}</td></tr>
+          <tr class="hidden-row"><td>GST on Processing Fee (18%)</td><td>${fmt(b.gst_on_processing_fee_18pct)}</td></tr>
+          <tr class="hidden-row"><td>Unrefundable GST on Interest (18%)</td><td>${fmt(b.unrefundable_gst_on_interest_18pct)}</td></tr>
+          <tr class="hidden-row"><td>Forgone Upfront Cash Discount</td><td>${fmt(b.forgone_upfront_cash_discount)}</td></tr>
+          <tr class="total"><td><strong>Total Hidden Surcharges</strong></td><td>${fmt(d.total_hidden_surcharges)}</td></tr>
+          <tr class="total"><td><strong>True Effective Outlay</strong></td><td>${fmt(d.true_effective_outlay)}</td></tr>
+        </table>
+      </div>
+      <div class="advice-box">
+        <strong>Verdict</strong>
+        ${d.advice}
+      </div>`;
+  } catch(e) {
+    document.getElementById('result-emi').innerHTML = `<div class="error-box">⚠️ API error: ${e.message}</div>`;
+  }
+  const btn = document.getElementById('btn-emi');
+  btn.disabled = false;
+  btn.innerHTML = '<span>Expose Hidden Charges</span>';
+}
+
+async function runChipflation() {
+  setLoading('btn-chipflation', true);
+  const body = {
+    category: document.getElementById('c-category').value,
+    current_price: +document.getElementById('c-current').value,
+    historical_baseline: +document.getElementById('c-baseline').value,
+    chipflation_index: +document.getElementById('c-ci').value / 100
+  };
+  try {
+    const res = await fetch(`${API}/api/v1/chipflation-decision-index`, {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    const d = await res.json();
+    const vc = verdictClass(d.decision);
+    const diColor = d.decision_index > 1.25 ? '#ef4444' : d.decision_index < 0.95 ? '#22c55e' : '#eab308';
+    const fmt = n => '₹' + n.toLocaleString('en-IN');
+    document.getElementById('result-chipflation').innerHTML = `
+      <div class="verdict-badge ${vc}">
+        ${d.decision === 'OPTIMAL_BUY_WINDOW' ? '✅' : d.decision === 'MODERATE_PRICING' ? '⚠️' : '🔴'}
+        ${d.decision.replace(/_/g,' ')}
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Decision Index</div>
+          <div class="stat-value" style="color:${diColor}">${d.decision_index}</div>
+          <div class="stat-sub">threshold: 0.95 / 1.25</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Price vs Baseline</div>
+          <div class="stat-value" style="color:${d.price_vs_baseline_pct > 0 ? '#ef4444' : '#22c55e'}">
+            ${d.price_vs_baseline_pct > 0 ? '+' : ''}${d.price_vs_baseline_pct}%
+          </div>
+          <div class="stat-sub">vs historical avg</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Market Status</div>
+          <div class="stat-value" style="font-size:13px;color:${d.chipflation_impact.market_assessment === 'INFLATED' ? '#ef4444' : '#22c55e'}">
+            ${d.chipflation_impact.market_assessment}
+          </div>
+          <div class="stat-sub">${d.chipflation_impact.component_inflation_factor}× CI</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">DI Reference Scale</div>
+        <div class="progress-wrap">
+          <span class="progress-label">🟢 Optimal Buy  (DI &lt; 0.95)</span>
+          <div class="progress-bar-bg"><div class="progress-bar" style="width:${Math.min(100,d.decision_index*65)}%;background:${diColor}"></div></div>
+          <span class="progress-pct">${d.decision_index}</span>
+        </div>
+        <div style="font-size:10px;color:var(--muted-foreground);margin-top:4px;line-height:1.6">
+          Price inflation factor: ${d.chipflation_impact.price_inflation_factor} ·
+          Buy window: ${d.buy_window.replace(/_/g,' ')}
+        </div>
+      </div>
+      <div class="advice-box">
+        <strong>Chipflation Verdict</strong>
+        ${d.advice}
+      </div>`;
+  } catch(e) {
+    document.getElementById('result-chipflation').innerHTML = `<div class="error-box">⚠️ API error: ${e.message}</div>`;
+  }
+  const btn = document.getElementById('btn-chipflation');
+  btn.disabled = false;
+  btn.innerHTML = '<span>Compute Decision Index</span>';
+}
+
+// Auto-run defaults on load
+window.addEventListener('load', () => {
+  setTimeout(runLongevity, 300);
+});
+</script>
+</body>
+</html>
