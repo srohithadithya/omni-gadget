@@ -18,117 +18,117 @@ import uuid
 from datetime import datetime, timezone
 
 import psycopg2
-from psycopg2.extras import RealDictCursor
+from psycopg2.extras import RealDictCursor  # noqa: F401  # unused in migration main()
 
 
 # ─── Schema DDL ───────────────────────────────────────────────────────────────
 
-SCHEMA_SQL = """
--- Extensions
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
--- ─── Gadgets Master Catalogue ───────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS gadgets (
-    gadget_id       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    category        VARCHAR(20) NOT NULL CHECK (category IN ('mobile','laptop','audio','video','memory','wearable')),
-    brand           VARCHAR(60) NOT NULL,
-    model_name      VARCHAR(120) NOT NULL,
-    tier            VARCHAR(40),
-    base_msrp       NUMERIC(12, 2) NOT NULL,
-    current_price   NUMERIC(12, 2) NOT NULL,
-    historical_baseline NUMERIC(12, 2) NOT NULL,
-    ram_gb          SMALLINT,
-    storage_gb      INT,
-    display_spec    VARCHAR(120),
-    chipflation_risk VARCHAR(20) DEFAULT 'medium',
-    use_cases       TEXT[],
-    pros            TEXT[],
-    cons            TEXT[],
-    rating          NUMERIC(3,1),
-    review_count    INT DEFAULT 0,
-    refurb_available BOOLEAN DEFAULT FALSE,
-    refurb_price    NUMERIC(12, 2),
-    refurb_source   VARCHAR(120),
-    is_active       BOOLEAN DEFAULT TRUE,
-    created_at      TIMESTAMPTZ DEFAULT NOW(),
-    updated_at      TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_gadgets_category ON gadgets(category);
-CREATE INDEX IF NOT EXISTS idx_gadgets_price    ON gadgets(current_price);
-
--- ─── Chipflation Spot Price Log ─────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS chipflation_index (
-    index_id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    component_type  VARCHAR(50) NOT NULL,
-    spot_price_usd  NUMERIC(10, 4) NOT NULL,
-    mom_growth_pct  NUMERIC(6, 2) NOT NULL,
-    yoy_growth_pct  NUMERIC(6, 2),
-    source          VARCHAR(80),
-    recorded_at     TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_chipflation_component ON chipflation_index(component_type);
-CREATE INDEX IF NOT EXISTS idx_chipflation_time      ON chipflation_index(recorded_at DESC);
-
--- ─── User Devices (telemetry submissions) ───────────────────────────────────
-CREATE TABLE IF NOT EXISTS user_devices (
-    device_id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    session_id          VARCHAR(64),
-    category            VARCHAR(20) NOT NULL,
-    device_brand        VARCHAR(60),
-    device_model        VARCHAR(120),
-    age_months          SMALLINT NOT NULL,
-    battery_health_pct  NUMERIC(5, 2) NOT NULL,
-    storage_health_pct  NUMERIC(5, 2) NOT NULL,
-    physical_condition  NUMERIC(3, 2) NOT NULL,
-    eol_months          SMALLINT,
-    url_score_pct       NUMERIC(5, 2),
-    estimated_years_left NUMERIC(4, 1),
-    decision            VARCHAR(40),
-    created_at          TIMESTAMPTZ DEFAULT NOW()
-);
-
--- ─── EMI Audit Log ──────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS emi_audit_log (
-    audit_id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    gadget_id               UUID REFERENCES gadgets(gadget_id) ON DELETE SET NULL,
-    session_id              VARCHAR(64),
-    product_msrp            NUMERIC(12, 2) NOT NULL,
-    no_cost_discount        NUMERIC(10, 2) DEFAULT 0,
-    bank_processing_fee     NUMERIC(8, 2)  DEFAULT 299,
-    tenure_months           SMALLINT NOT NULL,
-    forgone_cash_discount   NUMERIC(10, 2) DEFAULT 0,
-    exchange_bonus          NUMERIC(10, 2) DEFAULT 0,
-    total_hidden_charges    NUMERIC(10, 2),
-    true_effective_outlay   NUMERIC(12, 2),
-    recommendation          VARCHAR(40),
-    created_at              TIMESTAMPTZ DEFAULT NOW()
-);
-
--- ─── Price History Tracker ──────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS price_history (
-    history_id  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    gadget_id   UUID NOT NULL REFERENCES gadgets(gadget_id) ON DELETE CASCADE,
-    price       NUMERIC(12, 2) NOT NULL,
-    source      VARCHAR(80),
-    recorded_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_price_history_gadget ON price_history(gadget_id, recorded_at DESC);
-
--- ─── Sale Event Calendar ────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS sale_events (
-    event_id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_name      VARCHAR(120) NOT NULL,
-    platform        VARCHAR(60),
-    start_date      DATE NOT NULL,
-    end_date        DATE NOT NULL,
-    typical_discount_pct NUMERIC(4, 1),
-    categories      TEXT[],
-    notes           TEXT
-);
-"""
+SCHEMA_STATEMENTS = [
+    # Extensions
+    'CREATE EXTENSION IF NOT EXISTS "pgcrypto";',
+    
+    # ─── Gadgets Master Catalogue ───────────────────────────────────────────────
+    """CREATE TABLE IF NOT EXISTS gadgets (
+        gadget_id       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        category        VARCHAR(20) NOT NULL CHECK (category IN ('mobile','laptop','audio','video','memory','wearable')),
+        brand           VARCHAR(60) NOT NULL,
+        model_name      VARCHAR(120) NOT NULL,
+        tier            VARCHAR(40),
+        base_msrp       NUMERIC(12, 2) NOT NULL,
+        current_price   NUMERIC(12, 2) NOT NULL,
+        historical_baseline NUMERIC(12, 2) NOT NULL,
+        ram_gb          SMALLINT,
+        storage_gb      INT,
+        display_spec    VARCHAR(120),
+        chipflation_risk VARCHAR(20) DEFAULT 'medium',
+        use_cases       TEXT[],
+        pros            TEXT[],
+        cons            TEXT[],
+        rating          NUMERIC(3,1),
+        review_count    INT DEFAULT 0,
+        refurb_available BOOLEAN DEFAULT FALSE,
+        refurb_price    NUMERIC(12, 2),
+        refurb_source   VARCHAR(120),
+        is_active       BOOLEAN DEFAULT TRUE,
+        created_at      TIMESTAMPTZ DEFAULT NOW(),
+        updated_at      TIMESTAMPTZ DEFAULT NOW()
+    );""",
+    
+    "CREATE INDEX IF NOT EXISTS idx_gadgets_category ON gadgets(category);",
+    "CREATE INDEX IF NOT EXISTS idx_gadgets_price    ON gadgets(current_price);",
+    
+    # ─── Chipflation Spot Price Log ─────────────────────────────────────────────
+    """CREATE TABLE IF NOT EXISTS chipflation_index (
+        index_id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        component_type  VARCHAR(50) NOT NULL,
+        spot_price_usd  NUMERIC(10, 4) NOT NULL,
+        mom_growth_pct  NUMERIC(6, 2) NOT NULL,
+        yoy_growth_pct  NUMERIC(6, 2),
+        source          VARCHAR(80),
+        recorded_at     TIMESTAMPTZ DEFAULT NOW()
+    );""",
+    
+    "CREATE INDEX IF NOT EXISTS idx_chipflation_component ON chipflation_index(component_type);",
+    "CREATE INDEX IF NOT EXISTS idx_chipflation_time      ON chipflation_index(recorded_at DESC);",
+    
+    # ─── User Devices (telemetry submissions) ───────────────────────────────────
+    """CREATE TABLE IF NOT EXISTS user_devices (
+        device_id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        session_id          VARCHAR(64),
+        category            VARCHAR(20) NOT NULL,
+        device_brand        VARCHAR(60),
+        device_model        VARCHAR(120),
+        age_months          SMALLINT NOT NULL,
+        battery_health_pct  NUMERIC(5, 2) NOT NULL,
+        storage_health_pct  NUMERIC(5, 2) NOT NULL,
+        physical_condition  NUMERIC(3, 2) NOT NULL,
+        eol_months          SMALLINT,
+        url_score_pct       NUMERIC(5, 2),
+        estimated_years_left NUMERIC(4, 1),
+        decision            VARCHAR(40),
+        created_at          TIMESTAMPTZ DEFAULT NOW()
+    );""",
+    
+    # ─── EMI Audit Log ──────────────────────────────────────────────────────────
+    """CREATE TABLE IF NOT EXISTS emi_audit_log (
+        audit_id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        gadget_id               UUID REFERENCES gadgets(gadget_id) ON DELETE SET NULL,
+        session_id              VARCHAR(64),
+        product_msrp            NUMERIC(12, 2) NOT NULL,
+        no_cost_discount        NUMERIC(10, 2) DEFAULT 0,
+        bank_processing_fee     NUMERIC(8, 2)  DEFAULT 299,
+        tenure_months           SMALLINT NOT NULL,
+        forgone_cash_discount   NUMERIC(10, 2) DEFAULT 0,
+        exchange_bonus          NUMERIC(10, 2) DEFAULT 0,
+        total_hidden_charges    NUMERIC(10, 2),
+        true_effective_outlay   NUMERIC(12, 2),
+        recommendation          VARCHAR(40),
+        created_at              TIMESTAMPTZ DEFAULT NOW()
+    );""",
+    
+    # ─── Price History Tracker ──────────────────────────────────────────────────
+    """CREATE TABLE IF NOT EXISTS price_history (
+        history_id  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        gadget_id   UUID NOT NULL REFERENCES gadgets(gadget_id) ON DELETE CASCADE,
+        price       NUMERIC(12, 2) NOT NULL,
+        source      VARCHAR(80),
+        recorded_at TIMESTAMPTZ DEFAULT NOW()
+    );""",
+    
+    "CREATE INDEX IF NOT EXISTS idx_price_history_gadget ON price_history(gadget_id, recorded_at DESC);",
+    
+    # ─── Sale Event Calendar ────────────────────────────────────────────────────
+    """CREATE TABLE IF NOT EXISTS sale_events (
+        event_id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        event_name      VARCHAR(120) NOT NULL,
+        platform        VARCHAR(60),
+        start_date      DATE NOT NULL,
+        end_date        DATE NOT NULL,
+        typical_discount_pct NUMERIC(4, 1),
+        categories      TEXT[],
+        notes           TEXT
+    );""",
+]
 
 
 # ─── Seed Data ────────────────────────────────────────────────────────────────
@@ -873,7 +873,7 @@ def main():
     print(f"Connecting to: {safe_url}")
 
     try:
-        conn = psycopg2.connect(database_url, cursor_factory=RealDictCursor)
+        conn = psycopg2.connect(database_url)
         conn.autocommit = False
     except psycopg2.OperationalError as e:
         print(f"ERROR: Could not connect to database: {e}")
@@ -884,7 +884,8 @@ def main():
 
         # ── Create tables ────────────────────────────────────────────────
         print("\n1. Creating tables…")
-        cur.execute(SCHEMA_SQL)
+        for stmt in SCHEMA_STATEMENTS:
+            cur.execute(stmt)
         print("  ✓ All tables created (IF NOT EXISTS).")
 
         # ── Seed data ────────────────────────────────────────────────────
