@@ -386,15 +386,18 @@ class TestChipflationEngine:
         assert result.seasonal_hint == SEASONAL_HINTS[category]
 
     def test_unknown_category_fallback(self):
-        """Unknown category uses fallback profile (index=1.10, generic driver)."""
-        inp = ChipflationInput(
-            category="toaster",
-            current_price=1000,
-            historical_baseline=1000,
-            url_score=50.0,
-        )
-        result = calculate_di(inp)
-
+        """Unknown category uses fallback profile when DB has no row for it."""
+        # Mock the DB lookup (source function) to simulate an empty/unknown
+        # component so the fallback path (index=1.10) is deterministic.
+        import unittest.mock as mock
+        with mock.patch('app.db.get_chipflation_profile', return_value=None):
+            inp = ChipflationInput(
+                category="toaster",
+                current_price=1000,
+                historical_baseline=1000,
+                url_score=50.0,
+            )
+            result = calculate_di(inp)
         assert result.chipflation_index == 1.10
         assert "inflation" in result.driver.lower()
 

@@ -66,15 +66,19 @@ def get_chipflation_profile(category: str) -> dict | None:
             row = cur.fetchone()
             if not row:
                 return None
+            # Convert DECIMAL → float so downstream arithmetic (e.g. / by float) won't raise
+            spot = float(row['spot_price_usd'])
+            mom = float(row['mom_growth_pct'])
+            yoy = float(row['yoy_growth_pct'] or 0)
             # Convert yoy growth to approximate chipflation index (1.0 = no inflation)
-            ci = 1.0 + (row['yoy_growth_pct'] or 0) / 100.0
+            ci = 1.0 + yoy / 100.0
             return {
                 'index': round(ci, 3),
-                'driver': f"{row['component_type']} spot at ${row['spot_price_usd']}/GB, "
-                          f"+{row['mom_growth_pct']}% MoM, +{row['yoy_growth_pct']}% YoY",
-                'spot_price': row['spot_price_usd'],
-                'mom_growth': row['mom_growth_pct'],
-                'yoy_growth': row['yoy_growth_pct'],
+                'driver': f"{row['component_type']} spot at ${spot}/GB, "
+                          f"+{mom}% MoM, +{yoy}% YoY",
+                'spot_price': spot,
+                'mom_growth': mom,
+                'yoy_growth': yoy,
             }
     except Exception:
         return None
