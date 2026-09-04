@@ -1,13 +1,30 @@
 """
 AIDE-OS — FastAPI Application Entry Point v4.0.0-PROD
 Clean, schema-separated implementation with all 5 endpoints.
+Telegram bot runs as a daemon thread inside the same process.
 """
+import logging
+from contextlib import asynccontextmanager
+from datetime import datetime
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from datetime import datetime
 
 from app.config import get_settings
+
+logger = logging.getLogger("aide-os")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Start Telegram bot daemon thread on server startup."""
+    from app.bot_runner import start_bot_if_configured
+    bot_thread = start_bot_if_configured()
+    if bot_thread:
+        logger.info("Telegram bot running in background (thread=%s)", bot_thread.name)
+    yield
+    logger.info("Shutting down AIDE-OS …")
 from app.schemas import (
     URLRequest, ChipflationRequest, EMIRequest, EMIScheduleRequest,
     RecommendRequest, FullDecisionRequest
@@ -32,6 +49,7 @@ app = FastAPI(
     version=cfg.APP_VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
