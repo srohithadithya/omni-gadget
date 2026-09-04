@@ -7,7 +7,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://aide-os-api.onrender.com/api/:path*"
+      "destination": "https://omni-gadget.onrender.com/api/:path*"
     }
   ],
 
@@ -15,7 +15,7 @@
     {
       "source": "/api/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "https://aide-os.vercel.app" },
+        { "key": "Access-Control-Allow-Origin", "value": "https://omni-gadget.vercel.app" },
         { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,OPTIONS" },
         { "key": "Access-Control-Allow-Headers", "value": "Content-Type,Authorization" },
         { "key": "Access-Control-Allow-Credentials", "value": "true" }
