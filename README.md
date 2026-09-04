@@ -586,11 +586,11 @@ Each engine module has been validated with weighted scoring criteria:
 
 **Frontend:** https://omni-gadget.vercel.app/
 
-**Backend API:** `https://aide-os-api.containers.snapdeploy.app` (after SnapDeploy deployment)
+**Backend API:** https://omni-gadget.onrender.com/
 
-**Swagger Docs:** `https://aide-os-api.containers.snapdeploy.app/docs`
+**Swagger Docs:** https://omni-gadget.onrender.com/docs
 
-**Telegram Bot:** `https://aide-os-bot.containers.snapdeploy.app` (after SnapDeploy deployment)
+**Telegram Bot:** Check Render Background Worker logs (URL not exposed)
 
 ---
 
