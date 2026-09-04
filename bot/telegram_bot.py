@@ -12,7 +12,6 @@ Usage:
 import logging
 import os
 import re
-import sqlite3
 import sys
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -30,63 +29,16 @@ from telegram.ext import (
     filters,
 )
 
-from price_check import PriceChecker
+from bot.price_check import PriceChecker
 
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
-
-load_dotenv(Path(__file__).parent / ".env")
-
-TELEGRAM_BOT_TOKEN: str = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-DB_PATH: Path = Path(__file__).parent / "watches.db"
-
-logger = logging.getLogger("aide_os.telegram_bot")
-
-# ---------------------------------------------------------------------------
-# Database helpers
-# ---------------------------------------------------------------------------
-
-SCHEMA_SQL = """
-CREATE TABLE IF NOT EXISTS watches (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id     INTEGER NOT NULL,
-    product_url TEXT    NOT NULL,
-    product_name TEXT   NOT NULL DEFAULT 'Unknown product',
-    target_price REAL  NOT NULL DEFAULT 0.0,
-    created_at  TEXT   NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS price_history (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    watch_id   INTEGER NOT NULL,
-    price      REAL    NOT NULL,
-    checked_at TEXT    NOT NULL,
-    FOREIGN KEY (watch_id) REFERENCES watches(id) ON DELETE CASCADE
-);
-"""
-
-
-def init_db() -> None:
-    """Create the SQLite database and tables if they don't already exist."""
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.executescript(SCHEMA_SQL)
-    conn.commit()
-    conn.close()
-    logger.info("Database initialised at %s", DB_PATH)
-
-
-@contextmanager
-def get_db() -> Generator[sqlite3.Connection, None, None]:
-    """Yield a short-lived SQLite connection with WAL mode and row_factory."""
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    try:
-        yield conn
-    finally:
-        conn.close()
+# Import new Postgres DB
+from bot.db import (
+    init_db,
+    add_watch,
+    list_watches,
+    remove_watch,
+    set_target_price,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -163,20 +115,8 @@ async def cmd_track(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     user_id: int = update.effective_user.id  # type: ignore[union-attr]
     product_name = extract_product_name(url)
-    now = datetime.now(timezone.utc).isoformat()
 
-    with get_db() as conn:
-        conn.execute(
-            "INSERT INTO watches (user_id, product_url, product_name, target_price, created_at) "
-            "VALUES (?, ?, ?, 0.0, ?)",
-            (user_id, url, product_name, now),
-        )
-        conn.commit()
-        row = conn.execute(
-            "SELECT id FROM watches WHERE user_id = ? ORDER BY id DESC LIMIT 1",
-            (user_id,),
-        ).fetchone()
-        watch_id = row["id"] if row else "?"
+    watch_id = add_watch(user_id, url, product_name)
 
     await update.message.reply_text(  # type: ignore[union-attr]
         f"✅ Now tracking!\n\n"
@@ -191,11 +131,7 @@ async def cmd_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /list — show all products tracked by this user."""
     user_id: int = update.effective_user.id  # type: ignore[union-attr]
 
-    with get_db() as conn:
-        rows = conn.execute(
-            "SELECT id, product_name, product_url, target_price FROM watches WHERE user_id = ? ORDER BY id",
-            (user_id,),
-        ).fetchall()
+    rows = list_watches(user_id)
 
     if not rows:
         await update.message.reply_text("📭 You aren't tracking any products yet.\nUse /track <url> to start.")  # type: ignore[union-attr]
@@ -226,19 +162,17 @@ async def cmd_remove(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
     user_id: int = update.effective_user.id  # type: ignore[union-attr]
 
-    with get_db() as conn:
-        row = conn.execute(
-            "SELECT id, product_name FROM watches WHERE id = ? AND user_id = ?",
-            (watch_id, user_id),
-        ).fetchone()
-        if not row:
-            await update.message.reply_text("❌ Watch not found or doesn't belong to you.")  # type: ignore[union-attr]
-            return
-        conn.execute("DELETE FROM price_history WHERE watch_id = ?", (watch_id,))
-        conn.execute("DELETE FROM watches WHERE id = ?", (watch_id,))
-        conn.commit()
+    # First get the product name for the response
+    rows = list_watches(user_id)
+    row = next((r for r in rows if r['id'] == watch_id), None)
+    if not row:
+        await update.message.reply_text("❌ Watch not found or doesn't belong to you.")  # type: ignore[union-attr]
+        return
 
-    await update.message.reply_text(f"🗑 Removed **{row['product_name']}** (#{watch_id}).", parse_mode="Markdown")  # type: ignore[union-attr]
+    if remove_watch(watch_id, user_id):
+        await update.message.reply_text(f"🗑 Removed **{row['product_name']}** (#{watch_id}).", parse_mode="Markdown")  # type: ignore[union-attr]
+    else:
+        await update.message.reply_text("❌ Watch not found or doesn't belong to you.")  # type: ignore[union-attr]
 
 
 async def cmd_setprice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -260,32 +194,28 @@ async def cmd_setprice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     user_id: int = update.effective_user.id  # type: ignore[union-attr]
 
-    with get_db() as conn:
-        row = conn.execute(
-            "SELECT id, product_name FROM watches WHERE id = ? AND user_id = ?",
-            (watch_id, user_id),
-        ).fetchone()
-        if not row:
-            await update.message.reply_text("❌ Watch not found or doesn't belong to you.")  # type: ignore[union-attr]
-            return
-        conn.execute("UPDATE watches SET target_price = ? WHERE id = ?", (target_price, watch_id))
-        conn.commit()
+    # Verify ownership first
+    rows = list_watches(user_id)
+    row = next((r for r in rows if r['id'] == watch_id), None)
+    if not row:
+        await update.message.reply_text("❌ Watch not found or doesn't belong to you.")  # type: ignore[union-attr]
+        return
 
-    await update.message.reply_text(  # type: ignore[union-attr]
-        f"🎯 Target price for **{row['product_name']}** set to ₹{target_price:.2f}\n"
-        f"I'll notify you when the price drops below this.",
-        parse_mode="Markdown",
-    )
+    if set_target_price(watch_id, user_id, target_price):
+        await update.message.reply_text(  # type: ignore[union-attr]
+            f"🎯 Target price for **{row['product_name']}** set to ₹{target_price:.2f}\n"
+            f"I'll notify you when the price drops below this.",
+            parse_mode="Markdown",
+        )
+    else:
+        await update.message.reply_text("❌ Failed to set target price.")  # type: ignore[union-attr]
 
 
 async def cmd_check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /check — run a price check on ALL products for this user."""
     user_id: int = update.effective_user.id  # type: ignore[union-attr]
 
-    with get_db() as conn:
-        rows = conn.execute(
-            "SELECT id FROM watches WHERE user_id = ?", (user_id,)
-        ).fetchall()
+    rows = list_watches(user_id)
 
     if not rows:
         await update.message.reply_text("📭 Nothing to check. Add products with /track first.")  # type: ignore[union-attr]
@@ -293,7 +223,7 @@ async def cmd_check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     await update.message.reply_text("⏳ Checking prices…")  # type: ignore[union-attr]
 
-    checker = PriceChecker(DB_PATH)
+    checker = PriceChecker()
     try:
         results = checker.check_all_watches()
     except Exception:
@@ -369,8 +299,6 @@ def build_application() -> Application:
             "TELEGRAM_BOT_TOKEN not set. "
             "Copy .env.example to .env and fill in your bot token."
         )
-
-    init_db()
 
     app = (
         Application.builder()
