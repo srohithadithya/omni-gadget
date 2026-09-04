@@ -15,7 +15,7 @@
 # - Health check: /api/v1/health
 # - Environment variables set in SnapDeploy dashboard:
 #   DATABASE_URL, REDIS_URL, SECRET_KEY, DEBUG=false, ENVIRONMENT=production,
-#   CORS_ORIGINS=["https://aide-os.vercel.app","http://localhost:3000"]
+#   CORS_ORIGINS=["https://omni-gadget.vercel.app","http://localhost:3000"]
 
 # Bot container (Telegram)
 # - Uses bot/Dockerfile (new - create simple Dockerfile for bot)

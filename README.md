@@ -584,15 +584,13 @@ Each engine module has been validated with weighted scoring criteria:
 
 ## 🌐 Live Demo
 
-> **🚧 Coming soon after deployment!**
+**Frontend:** https://omni-gadget.vercel.app/
 
-Once deployed, your live URL will be:
+**Backend API:** `https://aide-os-api.containers.snapdeploy.app` (after SnapDeploy deployment)
 
-| Service | URL |
-|---------|-----|
-| Frontend | `https://your-app.vercel.app` |
-| Backend API | `https://aide-os-api.onrender.com` |
-| Swagger Docs | `https://aide-os-api.onrender.com/docs` |
+**Swagger Docs:** `https://aide-os-api.containers.snapdeploy.app/docs`
+
+**Telegram Bot:** `https://aide-os-bot.containers.snapdeploy.app` (after SnapDeploy deployment)
 
 ---
 
