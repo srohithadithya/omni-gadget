@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const NAV = [
@@ -15,10 +15,25 @@ const NAV = [
 export default function Layout({ children }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <div className="app-layout">
-      <aside className="sidebar">
+      {/* Mobile Hamburger */}
+      <div className="mobile-hamburger">
+        <button
+          className="hamburger-btn"
+          aria-label="Open menu"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          <span className="hamburger-line" />
+          <span className="hamburger-line" />
+          <span className="hamburger-line" />
+        </button>
+      </div>
+
+      {/* Sidebar - hidden on mobile when menu closed */}
+      <aside className={`${isMobileMenuOpen ? 'sidebar sidebar-open' : 'sidebar'}`}>
         <div className="sidebar-logo">
           <h2>⚡ AIDE-OS</h2>
           <span>v4.0.0-PROD</span>
@@ -28,7 +43,10 @@ export default function Layout({ children }) {
             <button
               key={n.path}
               className={`nav-item ${pathname === n.path ? 'active' : ''}`}
-              onClick={() => navigate(n.path)}
+              onClick={() => {
+                navigate(n.path);
+                setIsMobileMenuOpen(false); // close menu on nav click
+              }}
             >
               <span className="nav-icon">{n.icon}</span>
               {n.label}
@@ -45,6 +63,7 @@ export default function Layout({ children }) {
           </div>
         </div>
       </aside>
+
       <main className="main-content">{children}</main>
     </div>
   );
