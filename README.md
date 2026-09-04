@@ -17,7 +17,7 @@
 
 <br/>
 
-[![Deploy Backend to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+[![Deploy Backend to SnapDeploy](https://snapdeploy.dev/button.svg)](https://snapdeploy.dev/new)
 [![Deploy Frontend to Vercel](https://vercel.com/button)](https://vercel.com/new)
 
 > **Beat chipflation. Know when to buy, when to hold, and what your "No-Cost EMI" actually costs.**
@@ -289,31 +289,25 @@ aide_os/
 
 ## 🚀 Zero-Cost Deployment (₹0 Investment)
 
-Deploy the entire stack for **zero cost** using free tiers of Render, Vercel, Neon, and Upstash. No credit card required.
+Deploy the entire stack for **zero cost** using free tiers of **SnapDeploy**, Vercel, Neon, and Upstash. **No credit card required** — ever.
 
 ### Deployment Architecture
 
 ```
-┌──────────────────────┐     ┌──────────────────────┐
-│   Vercel (Free)      │────▶│  Render (Free)       │
-│   React Frontend     │     │  FastAPI Backend     │
-│   Auto-deploy on     │     │  750 hrs/mo          │
-│   every push         │     │  Cold start: 30-50s  │
-└──────────────────────┘     └──────────┬───────────┘
-                                        │
-                              ┌─────────┴─────────┐
-                              │                   │
-                    ┌─────────▼──────┐  ┌────────▼──────────┐
-                    │  Neon (Free)   │  │  Upstash (Free)    │
-                    │  PostgreSQL    │  │  Redis             │
-                    │  0.5GB storage │  │  256MB / 500K cmds │
-                    └────────────────┘  └────────────────────┘
-                              │
-                    ┌─────────▼──────────┐
-                    │  Render Worker     │
-                    │  Telegram Bot      │
-                    │  Background Process│
-                    └────────────────────┘
+┌──────────────────────┐     ┌─────────────────────────────┐
+│   Vercel (Free)      │────▶│  SnapDeploy (Free)          │
+│   React Frontend     │     │  FastAPI Backend + Bot      │
+│   Auto-deploy on     │     │  2 containers, 100 hrs      │
+│   every push         │     │  Auto-sleep/wake 10-30s     │
+└──────────────────────┘     └─────────────┬───────────────┘
+                                          │
+                              ┌───────────┴───────────┐
+                              │                       │
+                    ┌─────────▼──────┐      ┌────────▼──────────┐
+                    │  Neon (Free)   │      │  Upstash (Free)    │
+                    │  PostgreSQL    │      │  Redis             │
+                    │  0.5GB storage │      │  256MB / 500K cmds │
+                    └────────────────┘      └────────────────────┘
 ```
 
 ---
@@ -342,59 +336,44 @@ Deploy the entire stack for **zero cost** using free tiers of Render, Vercel, Ne
 ### Step 3: GitHub Repository (1 min)
 
 1. Ensure code is pushed to GitHub (already done: [github.com/AiWujie/aide_os](https://github.com/AiWujie/aide_os))
-2. Make sure the repository is **public** (required for Render free tier)
+2. Make sure the repository is **public** (required for SnapDeploy free tier)
 
 ---
 
-### Step 4: Render Backend (5 min)
+### Step 4: SnapDeploy Backend + Bot (5 min)
 
-1. Sign up at [render.com](https://render.com) with your GitHub account
-2. Click **New** → **Web Service** → **Connect** the `aide_os` repo
-3. Configure the service:
+1. Sign up at [snapdeploy.dev](https://snapdeploy.dev) — **no credit card required**
+2. Click **New Container** → **Connect GitHub** → select `aide_os` repo
+3. **Deploy Backend** (FastAPI):
+   - Container name: `aide-os-api` (becomes `aide-os-api.containers.snapdeploy.app`)
+   - Root directory: `backend`
+   - Uses `backend/Dockerfile` (already included)
+   - Port: `8000`
+   - Health check path: `/api/v1/health`
+   - Environment variables (add in dashboard):
+     - `DATABASE_URL` — from Step 1
+     - `REDIS_URL` — from Step 2
+     - `SECRET_KEY` — generate: `python -c "import secrets; print(secrets.token_hex(32))"`
+     - `DEBUG` = `false`
+     - `ENVIRONMENT` = `production`
+     - `CORS_ORIGINS` = `["https://aide-os.vercel.app","http://localhost:3000"]`
+4. **Deploy Bot** (Telegram):
+   - Click **New Container** → same repo
+   - Container name: `aide-os-bot`
+   - Root directory: `bot`
+   - Uses `bot/Dockerfile` (already included)
+   - No port needed (background worker)
+   - Environment variables:
+     - `DATABASE_URL` — from Step 1
+     - `TELEGRAM_BOT_TOKEN` — from [@BotFather](https://t.me/BotFather)
+     - `BOT_CHAT_ID` — your Telegram chat ID
+5. Click **Deploy** — builds in ~2-3 minutes
 
-| Setting | Value |
-|---------|-------|
-| **Name** | `aide-os-api` |
-| **Runtime** | Python |
-| **Branch** | `main` |
-| **Build Command** | `pip install -r backend/requirements.txt` |
-| **Start Command** | `cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
-
-4. Go to **Environment** → add these variables:
-   - `DATABASE_URL` — from Step 1
-   - `REDIS_URL` — from Step 2
-   - `SECRET_KEY` — generate with: `python -c "import secrets; print(secrets.token_hex(32))"`
-
-5. Click **Create Web Service** — deploy takes 2–3 minutes
-6. Note your URL: `https://aide-os-api.onrender.com`
-
-> **Verify:** Visit `https://aide-os-api.onrender.com/docs` to see the Swagger UI.
-
----
-
-### Step 5: Render Telegram Worker (3 min)
-
-1. In Render, click **New** → **Background Worker** → connect the same `aide_os` repo
-2. Configure:
-
-| Setting | Value |
-|---------|-------|
-| **Name** | `aide-os-bot` |
-| **Runtime** | Python |
-| **Branch** | `main` |
-| **Build Command** | `pip install -r bot/requirements.txt` |
-| **Start Command** | `cd bot && python telegram_bot.py` |
-
-3. Add environment variables:
-   - `BOT_TOKEN` — from [@BotFather](https://t.me/BotFather) on Telegram
-   - `BOT_CHAT_ID` — your Telegram chat ID
-   - `DATABASE_URL` — from Step 1
-
-4. Click **Create Background Worker**
+> **Verify:** Visit `https://aide-os-api.containers.snapdeploy.app/docs` to see the Swagger UI.
 
 ---
 
-### Step 6: Vercel Frontend (3 min)
+### Step 5: Vercel Frontend (3 min)
 
 1. Sign up at [vercel.com](https://vercel.com) with your GitHub account
 2. Click **Import** → select the `aide_os` repository
@@ -408,7 +387,7 @@ Deploy the entire stack for **zero cost** using free tiers of Render, Vercel, Ne
 | **Output Directory** | `dist` |
 
 4. Add environment variable:
-   - `VITE_API_URL` = `https://aide-os-api.onrender.com`
+   - `VITE_API_URL` = `https://aide-os-api.containers.snapdeploy.app`
 
 5. Click **Deploy** — builds in ~30 seconds
 
@@ -416,7 +395,7 @@ Deploy the entire stack for **zero cost** using free tiers of Render, Vercel, Ne
 
 ---
 
-### Step 7: Chrome Extension (optional, 10 min)
+### Step 6: Chrome Extension (optional, 10 min)
 
 1. Open Chrome → navigate to `chrome://extensions`
 2. Enable **Developer mode** (toggle in top-right)
@@ -430,12 +409,15 @@ Deploy the entire stack for **zero cost** using free tiers of Render, Vercel, Ne
 
 | Variable | Where to Set | Description |
 |----------|-------------|-------------|
-| `DATABASE_URL` | Render Backend + Bot | PostgreSQL connection string from Neon |
-| `REDIS_URL` | Render Backend | Redis URL from Upstash |
-| `SECRET_KEY` | Render Backend | JWT/session secret — generate a random 64-char hex string |
-| `BOT_TOKEN` | Render Bot Worker | Telegram Bot API token from @BotFather |
-| `BOT_CHAT_ID` | Render Bot Worker | Target Telegram chat/group ID for notifications |
-| `VITE_API_URL` | Vercel Frontend | Backend API URL (e.g. `https://aide-os-api.onrender.com`) |
+| `DATABASE_URL` | SnapDeploy Backend + Bot | PostgreSQL connection string from Neon |
+| `REDIS_URL` | SnapDeploy Backend | Redis URL from Upstash |
+| `SECRET_KEY` | SnapDeploy Backend | JWT/session secret — generate a random 64-char hex string |
+| `TELEGRAM_BOT_TOKEN` | SnapDeploy Bot | Telegram Bot API token from @BotFather |
+| `BOT_CHAT_ID` | SnapDeploy Bot | Target Telegram chat/group ID for notifications |
+| `VITE_API_URL` | Vercel Frontend | Backend API URL (e.g. `https://aide-os-api.containers.snapdeploy.app`) |
+| `DEBUG` | SnapDeploy Backend | Set to `false` for production |
+| `ENVIRONMENT` | SnapDeploy Backend | Set to `production` |
+| `CORS_ORIGINS` | SnapDeploy Backend | JSON array of allowed origins (Vercel URL + localhost) |
 
 ---
 
@@ -443,10 +425,12 @@ Deploy the entire stack for **zero cost** using free tiers of Render, Vercel, Ne
 
 | Service | Free Tier Limit | Impact | Mitigation |
 |---------|----------------|--------|------------|
-| **Render** | 750 hrs/mo, spins down after 15min idle | Cold start: 30–50s on first request | Keep-alive pings; upgrade to Starter ($7/mo) at 1000+ daily users |
+| **SnapDeploy** | 2 containers, 100 hrs total runtime | Auto-sleeps after idle, 10-30s cold start | Auto-wakes on traffic; Always-On $12/mo if needed |
 | **Neon** | 0.5GB storage, 100 compute-hours/mo | Enough for 10K+ products | Scale-to-zero saves compute hours |
 | **Upstash** | 256MB, 500K commands/mo | Sufficient for rate limiting & caching | Monitor usage in dashboard |
 | **Vercel** | Unlimited builds & bandwidth | Always-on, no cold starts | Best free tier of the stack |
+
+> **Note:** SnapDeploy free tier hours never expire. Use at your own pace. For 24/7 uptime, Always-On starts at $12/mo per container.
 
 ---
 
@@ -455,7 +439,7 @@ Deploy the entire stack for **zero cost** using free tiers of Render, Vercel, Ne
 | Service | Button |
 |---------|--------|
 | **Frontend** (Vercel) | [![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new) |
-| **Backend** (Render) | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy) |
+| **Backend** (SnapDeploy) | [![Deploy to SnapDeploy](https://snapdeploy.dev/button.svg)](https://snapdeploy.dev/new) |
 
 ---
 

@@ -1,0 +1,39 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# SnapDeploy Configuration — AIDE-OS Zero-Cost Production Deployment
+# ═══════════════════════════════════════════════════════════════════════════════
+# NO CREDIT CARD REQUIRED — Free tier: 2 containers, 100 hours runtime total
+# Auto-sleeps when idle, auto-wakes on traffic (10-30s cold start)
+# Deploy with: Push to GitHub → Connect repo on snapdeploy.dev → Deploy
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# AIDE-OS uses Docker-based deployment on SnapDeploy
+# Both backend and bot are separate containers
+
+# Backend container (FastAPI)
+# - Uses backend/Dockerfile (multi-stage, Python 3.11-slim)
+# - Port: 8000
+# - Health check: /api/v1/health
+# - Environment variables set in SnapDeploy dashboard:
+#   DATABASE_URL, REDIS_URL, SECRET_KEY, DEBUG=false, ENVIRONMENT=production,
+#   CORS_ORIGINS=["https://aide-os.vercel.app","http://localhost:3000"]
+
+# Bot container (Telegram)
+# - Uses bot/Dockerfile (new - create simple Dockerfile for bot)
+# - No port needed (long-running worker)
+# - Environment variables: DATABASE_URL, TELEGRAM_BOT_TOKEN, BOT_CHAT_ID
+
+# Database: Neon PostgreSQL (free, serverless, 0.5GB, 100 CU-hrs/mo)
+#   - Sign up at neon.tech (no credit card)
+#   - Copy connection string → set as DATABASE_URL in both containers
+
+# Redis: Upstash Redis (free, serverless, 256MB, 500K commands/mo)
+#   - Sign up at upstash.com (no credit card)
+#   - Copy Redis URL → set as REDIS_URL in backend container
+
+# Frontend: Vercel (already deployed by user)
+#   - Set VITE_API_URL=https://aide-os-api.containers.snapdeploy.app
+
+# Bot note: The Telegram bot currently uses SQLite locally (watches.db).
+# For full PostgreSQL migration, telegram_bot.py needs rewriting.
+# Option: Keep bot on local/Render trial, or deploy bot as SnapDeploy container
+# with DATABASE_URL pointing to Neon.
