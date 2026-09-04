@@ -40,9 +40,14 @@ from bot.db import (
     set_target_price,
 )
 
+# Logger
+logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# URL / product helpers
+# Bot token from environment
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+
+# --------------------------------------------------------------------------- 
+# URL / product helpers 
 # ---------------------------------------------------------------------------
 
 def extract_product_name(url: str) -> str:

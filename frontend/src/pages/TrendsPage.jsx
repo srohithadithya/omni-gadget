@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client';
+import TrendBarChart from '../components/TrendBarChart';
 
 function barColor(pct) {
   if (pct >= 70) return '#22c55e';
@@ -108,43 +109,19 @@ export default function TrendsPage() {
             </>
           )}
 
-          {/* Average DI Score by Category — CSS bar chart */}
+          {/* Average DI Score by Category — Recharts bar chart */}
           {categoryDI.length > 0 && (
             <>
               <div className="section-divider">Average Decision Index by Category</div>
               <div className="card" style={{ marginBottom: 20 }}>
                 <div className="card-title">Decision Index Score Distribution</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {categoryDI.map((cat, i) => {
-                    const val = cat.avg_di || cat.value || 0;
-                    const name = cat.category || cat.name || `Category ${i + 1}`;
-                    const pct = Math.min((val / maxDI) * 100, 100);
-                    return (
-                      <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ minWidth: 90, fontSize: 12, color: 'var(--text-muted)', textTransform: 'capitalize' }}>
-                          {name}
-                        </div>
-                        <div style={{
-                          flex: 1, height: 28, background: 'var(--border)',
-                          borderRadius: 6, overflow: 'hidden', position: 'relative',
-                        }}>
-                          <div style={{
-                            height: '100%', borderRadius: 6,
-                            width: `${pct}%`,
-                            background: `linear-gradient(90deg, #d97706, #f59e0b)`,
-                            transition: 'width .6s ease',
-                          }} />
-                          <span style={{
-                            position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
-                            fontSize: 12, fontWeight: 700, color: 'var(--text)',
-                          }}>
-                            {val.toFixed(1)}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <TrendBarChart 
+                  data={categoryDI.map(cat => ({
+                    name: cat.category || cat.name || `Category ${catDI.indexOf(cat)+1}`,
+                    value: cat.avg_di || cat.value || 0,
+                  }))} 
+                  maxValue={maxDI}
+                />
               </div>
             </>
           )}
