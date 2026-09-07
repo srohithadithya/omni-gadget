@@ -1,9 +1,13 @@
-// Centralised API client — all calls go through Vite proxy
+// Centralised API client
+// Production: points at the Render backend (VITE_API_URL).
+// Dev: empty baseURL falls through to the Vite proxy (/api -> localhost:8000).
 import axios from 'axios';
 
+const API_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '';
+
 const API = axios.create({
-  baseURL: '',  // Uses Vite proxy to /api
-  timeout: 15000,
+  baseURL: API_BASE,
+  timeout: 20000,
   headers: { 'Content-Type': 'application/json' },
 });
 
