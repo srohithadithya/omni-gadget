@@ -10,6 +10,7 @@ import FullDecisionPage from './pages/FullDecisionPage';
 import DashboardPage from './pages/DashboardPage';
 import TrendsPage from './pages/TrendsPage';
 import './index.css';
+import './legacy-compat.css';
 
 function App() {
   return (
