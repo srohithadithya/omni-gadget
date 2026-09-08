@@ -1,6 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/client';
 import TrendBarChart from '../components/TrendBarChart';
+import { useI18n } from '../i18n';
+import {
+  TrendingUp,
+  TrendingDown,
+  ArrowRight,
+  BarChart3,
+  Eye,
+  Lightbulb,
+  MapPin,
+  AlertTriangle,
+} from 'lucide-react';
+
+const REGIONS = ['India', 'USA', 'Europe', 'Southeast Asia'];
+
+// Determine if a data record carries region info; normalise for filtering.
+function regionOf(item) {
+  if (!item) return null;
+  return item.region || item.region_code || null;
+}
 
 function barColor(pct) {
   if (pct >= 70) return '#22c55e';
@@ -9,16 +28,19 @@ function barColor(pct) {
 }
 
 function TrendArrow({ direction }) {
-  if (direction === 'up') return <span style={{ color: '#ef4444', fontSize: 18 }}>📈</span>;
-  if (direction === 'down') return <span style={{ color: '#22c55e', fontSize: 18 }}>📉</span>;
-  return <span style={{ color: '#eab308', fontSize: 18 }}>➡️</span>;
+  if (direction === 'up') return <TrendingUp size={18} color="#ef4444" />;
+  if (direction === 'down') return <TrendingDown size={18} color="#22c55e" />;
+  return <ArrowRight size={18} color="#eab308" />;
 }
 
 export default function TrendsPage() {
+  const { t } = useI18n();
   const [popular, setPopular] = useState(null);
   const [trends, setTrends] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [region, setRegion] = useState('All');
+  const [regionTouched, setRegionTouched] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -30,7 +52,6 @@ export default function TrendsPage() {
         ]);
         if (popRes.status === 'fulfilled') setPopular(popRes.value.data);
         if (trendRes.status === 'fulfilled') setTrends(trendRes.value.data);
-        // If both failed
         if (popRes.status === 'rejected' && trendRes.status === 'rejected') {
           const msg = popRes.reason?.response?.data?.detail || popRes.reason?.message || 'Failed to load data';
           setError(msg);
@@ -50,34 +71,80 @@ export default function TrendsPage() {
   const chipflationTrend = trendData?.chipflation_trend || trendData?.chipflation || null;
   const recentInsights = trendData?.insights || trendData?.recent_insights || [];
 
-  // Compute max value for DI bar chart
+  // Client-side region filter
+  const activeRegion = regionTouched ? region : 'All';
+  const byRegion = (items) => {
+    if (!Array.isArray(items) || activeRegion === 'All') return items;
+    const tagged = items.filter((it) => regionOf(it));
+    if (tagged.length === 0) return items;
+    const lower = activeRegion.toLowerCase();
+    return items.filter((it) => {
+      const r = regionOf(it);
+      return !r || r.toString().toLowerCase() === lower;
+    });
+  };
+
+  const filteredCategories = byRegion(categoryDI);
+  const filteredPopular = byRegion(popularProducts);
+  const filteredInsights = byRegion(recentInsights);
+
   const maxDI = categoryDI.length > 0
     ? Math.max(...categoryDI.map(c => c.avg_di || c.value || 0), 1)
     : 100;
 
+  function handleRegionChange(e) {
+    setRegion(e.target.value);
+    setRegionTouched(true);
+  }
+
   return (
     <div>
       <div className="page-header">
-        <h1>📊 Market Trends</h1>
-        <p>Popular products, average Decision Index scores by category, and chipflation direction</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <BarChart3 size={24} color="var(--text)" style={{ flexShrink: 0 }} />
+          <h1 style={{ margin: 0 }}>{t('TRENDS.trend_title')}</h1>
+        </div>
+        <p>{t('TRENDS.trend_subtitle')}</p>
+        <div style={{ marginTop: 12 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)' }}>
+            <MapPin size={16} />
+            <select
+              value={region}
+              onChange={handleRegionChange}
+              style={{
+                padding: '6px 10px',
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                background: 'var(--card-bg)',
+                color: 'var(--text)',
+                fontSize: 14,
+              }}
+            >
+              <option value="All">All regions</option>
+              {REGIONS.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </label>
+        </div>
       </div>
 
       {loading ? (
         <div className="card" style={{ minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--text-muted)' }}>
           <span className="btn-spinner" style={{ borderColor: 'rgba(251,191,36,.3)', borderTopColor: '#fbbf24' }} />
-          Loading market data…
+          {t('COMMON.loading')}
         </div>
       ) : error ? (
         <div className="alert alert-red">
-          <span className="alert-icon">⚠️</span>
-          <div><strong>Error:</strong> {error}</div>
+          <span className="alert-icon"><AlertTriangle size={18} color="#ef4444" /></span>
+          <div><strong>{t('COMMON.error')}:</strong> {error}</div>
         </div>
       ) : (
         <>
           {/* Chipflation trend direction */}
           {chipflationTrend && (
             <>
-              <div className="section-divider">Chipflation Trend Direction</div>
+              <div className="section-divider">{t('TRENDS.trend_chipflation')}</div>
               <div className="card" style={{
                 background: 'linear-gradient(135deg, rgba(251,191,36,.08), rgba(217,119,6,.04))',
                 border: '1px solid rgba(251,191,36,.2)',
@@ -86,14 +153,14 @@ export default function TrendsPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                   <TrendArrow direction={chipflationTrend.direction || 'up'} />
                   <div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 2 }}>Current Trend</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 2 }}>{t('TRENDS.trend_direction')}</div>
                     <div style={{ fontSize: 18, fontWeight: 700, color: '#fbbf24' }}>
                       {chipflationTrend.label || chipflationTrend.direction?.toUpperCase() || 'MONITORING'}
                     </div>
                   </div>
                   {chipflationTrend.delta && (
                     <div style={{ marginLeft: 'auto' }}>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Monthly Change</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('TRENDS.trend_monthly_change')}</div>
                       <div style={{ fontSize: 20, fontWeight: 800, color: chipflationTrend.delta > 0 ? '#ef4444' : '#22c55e' }}>
                         {chipflationTrend.delta > 0 ? '+' : ''}{chipflationTrend.delta}%
                       </div>
@@ -110,16 +177,19 @@ export default function TrendsPage() {
           )}
 
           {/* Average DI Score by Category — Recharts bar chart */}
-          {categoryDI.length > 0 && (
+          {filteredCategories.length > 0 && (
             <>
-              <div className="section-divider">Average Decision Index by Category</div>
+              <div className="section-divider">{t('TRENDS.trend_di_category')}</div>
               <div className="card" style={{ marginBottom: 20 }}>
-                <div className="card-title">Decision Index Score Distribution</div>
-                <TrendBarChart 
-                  data={categoryDI.map(cat => ({
-                    name: cat.category || cat.name || `Category ${catDI.indexOf(cat)+1}`,
+                <div className="card-title">
+                  <Eye size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} />
+                  {t('TRENDS.trend_di_category')}
+                </div>
+                <TrendBarChart
+                  data={filteredCategories.map((cat) => ({
+                    name: cat.category || cat.name || `Category ${categoryDI.indexOf(cat) + 1}`,
                     value: cat.avg_di || cat.value || 0,
-                  }))} 
+                  }))}
                   maxValue={maxDI}
                 />
               </div>
@@ -127,11 +197,11 @@ export default function TrendsPage() {
           )}
 
           {/* Popular Products */}
-          {popularProducts.length > 0 && (
+          {filteredPopular.length > 0 && (
             <>
-              <div className="section-divider">Popular Products</div>
+              <div className="section-divider">{t('TRENDS.trend_popular')}</div>
               <div className="card-grid" style={{ marginBottom: 20 }}>
-                {popularProducts.map((p, i) => (
+                {filteredPopular.map((p, i) => (
                   <div key={p.id || p.name || i} className="product-card" style={{
                     borderColor: 'rgba(251,191,36,.15)',
                   }}>
@@ -148,11 +218,13 @@ export default function TrendsPage() {
                       )}
                     </div>
                     {p.price != null && (
-                      <div className="product-price">₹{Number(p.price).toLocaleString('en-IN')}</div>
+                      <div className="product-price">
+                        {t('TRENDS.trend_price')}: {t('COMMON.currency')}{Number(p.price).toLocaleString('en-IN')}
+                      </div>
                     )}
                     {p.di_score != null && (
                       <div style={{ marginTop: 6 }}>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Decision Index</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>{t('TRENDS.trend_di_category')}</div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <div style={{ flex: 1, height: 6, background: 'var(--border)', borderRadius: 99, overflow: 'hidden' }}>
                             <div style={{
@@ -177,15 +249,16 @@ export default function TrendsPage() {
           )}
 
           {/* Insights */}
-          {recentInsights.length > 0 && (
+          {filteredInsights.length > 0 && (
             <>
-              <div className="section-divider">Market Insights</div>
+              <div className="section-divider">{t('TRENDS.trend_insights')}</div>
               <div className="card" style={{
                 background: 'linear-gradient(135deg, rgba(99,102,241,.06), rgba(168,85,247,.04))',
                 border: '1px solid rgba(99,102,241,.15)',
               }}>
-                {recentInsights.map((ins, i) => (
-                  <div key={i} style={{ padding: '10px 0', borderBottom: i < recentInsights.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                {filteredInsights.map((ins, i) => (
+                  <div key={i} style={{ padding: '10px 0', borderBottom: i < filteredInsights.length - 1 ? '1px solid var(--border)' : 'none', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                    <Lightbulb size={16} color="#a78bfa" style={{ flexShrink: 0, marginTop: 2 }} />
                     <div style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.6 }}>
                       {typeof ins === 'string' ? ins : ins.text || ins.description || JSON.stringify(ins)}
                     </div>
@@ -198,9 +271,8 @@ export default function TrendsPage() {
           {/* Fallback empty state */}
           {!chipflationTrend && categoryDI.length === 0 && popularProducts.length === 0 && recentInsights.length === 0 && (
             <div className="card" style={{ minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12, color: 'var(--text-muted)' }}>
-              <div style={{ fontSize: 48 }}>📊</div>
-              <div style={{ fontWeight: 600 }}>No market data available yet</div>
-              <div style={{ fontSize: 13 }}>Trends will populate once enough decisions have been processed.</div>
+              <BarChart3 size={48} color="var(--text-muted)" />
+              <div style={{ fontWeight: 600 }}>{t('TRENDS.trend_no_data')}</div>
             </div>
           )}
         </>
