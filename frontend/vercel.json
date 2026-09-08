@@ -21,9 +21,5 @@
         { "key": "Access-Control-Allow-Credentials", "value": "true" }
       ]
     }
-  ],
-
-  "env": {
-    "VITE_API_URL": "@vite-api-url"
-  }
+  ]
 }
