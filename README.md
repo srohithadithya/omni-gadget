@@ -230,13 +230,19 @@ aide_os/
 │   │   ├── __init__.py
 │   │   ├── config.py                 # Environment & settings
 │   │   ├── schemas.py                # Pydantic request/response models
-│   │   ├── main.py                   # API endpoints (all 8 routes)
+│   │   ├── main.py                   # API endpoints (all 24 routes)
 │   │   └── engines/
 │   │       ├── __init__.py
 │   │       ├── url_engine.py         # Module 6: URL Score calculator
 │   │       ├── chipflation_engine.py # Module 2: Decision Index
 │   │       ├── emi_engine.py         # Module 7: Hidden fee extractor
-│   │       └── recommendation_engine.py # Modules 3 & 4: Product matching
+│   │       ├── recommendation_engine.py # Modules 3 & 4: Product matching
+│   │       ├── scraping_engine.py    # Live e-commerce price scraper (Amazon.in, Flipkart)
+│   │       ├── trendforce.py         # TrendForce/DRAMeXchange chipflation data
+│   │       ├── deal_verification.py  # Community deal verification & voting
+│   │       ├── price_comparison.py   # Multi-platform price comparison (12 platforms)
+│   │       ├── ml_predictor.py       # ML price prediction (linear regression)
+│   │       └── rate_limiter.py       # API rate limiting & usage dashboard
 │   ├── bot_runner.py                 # Telegram bot daemon thread
 │   ├── tests/
 │   │   └── test_engines.py           # 67 comprehensive pytest tests
@@ -440,6 +446,22 @@ Base URL (deployed): `https://omni-gadget.onrender.com`
 | `POST` | `/api/v1/emi-audit` | 7 | True cost, hidden charge breakdown, verdict |
 | `POST` | `/api/v1/recommend` | 3 & 4 | Ranked products, alternatives, refurbished options |
 | `POST` | `/api/v1/full-decision` | All | Combined single-call master decision engine |
+| `GET` | `/api/v1/history` | Analytics | Session decision history |
+| `GET` | `/api/v1/popular` | Analytics | Top recommended product categories |
+| `GET` | `/api/v1/trends` | Analytics | Market trends over time |
+| `POST` | `/api/v1/scrape` | Scraper | Live price from Amazon.in/Flipkart URL |
+| `POST` | `/api/v1/price-compare` | Comparison | Compare prices across 12 platforms |
+| `GET` | `/api/v1/platforms` | Comparison | List supported e-commerce platforms |
+| `GET` | `/api/v1/chipflation/trends` | Live Data | Live TrendForce/DRAMeXchange trends |
+| `GET` | `/api/v1/chipflation/refresh` | Live Data | Force refresh chipflation data |
+| `GET` | `/api/v1/predictions` | ML | Price predictions (1m, 3m, 6m outlook) |
+| `POST` | `/api/v1/deals/submit` | Community | Submit deal for verification |
+| `POST` | `/api/v1/deals/vote` | Community | Vote on deal authenticity |
+| `GET` | `/api/v1/deals` | Community | List community-submitted deals |
+| `GET` | `/api/v1/deals/stats` | Community | Deal verification statistics |
+| `GET` | `/api/v1/admin/dashboard` | Admin | API usage monitoring dashboard |
+| `GET` | `/api/v1/admin/rate-limits` | Admin | Rate limit configuration |
+| `POST` | `/api/v1/admin/rate-limits/reset` | Admin | Reset client rate limits |
 | `GET` | `/api/v1/admin/chipflation/latest` | Admin | Latest chipflation data per component |
 | `POST` | `/api/v1/admin/chipflation/update` | Admin | Insert new chipflation data point |
 
@@ -630,16 +652,16 @@ Contributions welcome! Here's how to get started:
 
 Remaining roadmap items to tackle:
 
-- [ ] **Live e-commerce price scraper** — Real-time price monitoring from Amazon.in and Flipkart.com
-- [ ] **TrendForce / DRAMeXchange API integration** — Live chipflation index from industry data sources
-- [ ] **Community deal-verification crowdsource API** — User-submitted deal verification and voting
 - [ ] **Mobile app (React Native)** — Native iOS/Android experience with push notifications
-- [ ] **Batch price comparison tool** — Compare prices across 10+ e-commerce platforms simultaneously
-- [ ] **ML price prediction model** — Forecast future price movements using historical chipflation data
-- [ ] **API rate limiting dashboard** — Usage monitoring and abuse prevention for public API consumers
 
 ### Recently Completed ✅
 
+- [x] **Live e-commerce price scraper** — Real-time price monitoring from Amazon.in and Flipkart.com
+- [x] **TrendForce / DRAMeXchange API integration** — Live chipflation index from industry data sources
+- [x] **Community deal-verification crowdsource API** — User-submitted deal verification and voting
+- [x] **Batch price comparison tool** — Compare prices across 12 e-commerce platforms simultaneously
+- [x] **ML price prediction model** — Forecast future price movements using historical chipflation data
+- [x] **API rate limiting dashboard** — Usage monitoring and abuse prevention for public API consumers
 - [x] Telegram price-drop notification bot (daemon thread in backend)
 - [x] Chrome Extension (Manifest V3) for inline price checking
 - [x] DB-backed product catalogue (100+ products across 6 categories)
