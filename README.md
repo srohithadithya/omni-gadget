@@ -17,9 +17,6 @@
 
 <br/>
 
-[![Deploy Backend to SnapDeploy](https://snapdeploy.dev/button.svg)](https://snapdeploy.dev/new)
-[![Deploy Frontend to Vercel](https://vercel.com/button)](https://vercel.com/new)
-
 > **Beat chipflation. Know when to buy, when to hold, and what your "No-Cost EMI" actually costs.**
 
 </div>
@@ -189,9 +186,9 @@ $$\text{True Cost} = \text{MSRP} + \underbrace{\text{Processing Fee} + \text{GST
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                           USER INPUT LAYER                              │
 │  Target Specs & Budget  •  Device Telemetry  •  Financing Preferences   │
-└────────────────────────────────────┬────────────────────────────────────┘
-                                     │
-                                     ▼
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │
+                                 ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                        DATA PROCESSING PIPELINE                         │
 │                                                                         │
@@ -212,9 +209,9 @@ $$\text{True Cost} = \text{MSRP} + \underbrace{\text{Processing Fee} + \text{GST
 │   │  Module 4: Refurbished & Alternative Matcher                   │    │
 │   │  Module 7: True-Cost EMI & Hidden Charges Extractor            │    │
 │   └────────────────────────────────────────────────────────────────┘    │
-└────────────────────────────────────┬────────────────────────────────────┘
-                                     │
-                                     ▼
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │
+                                 ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                            OUTPUT LAYER                                 │
 │  Master Verdict  •  Product Picks  •  EMI Audit  •  Optimal Buy Date    │
@@ -233,13 +230,14 @@ aide_os/
 │   │   ├── __init__.py
 │   │   ├── config.py                 # Environment & settings
 │   │   ├── schemas.py                # Pydantic request/response models
-│   │   ├── main.py                   # API endpoints (all 7 routes)
+│   │   ├── main.py                   # API endpoints (all 8 routes)
 │   │   └── engines/
 │   │       ├── __init__.py
 │   │       ├── url_engine.py         # Module 6: URL Score calculator
 │   │       ├── chipflation_engine.py # Module 2: Decision Index
 │   │       ├── emi_engine.py         # Module 7: Hidden fee extractor
 │   │       └── recommendation_engine.py # Modules 3 & 4: Product matching
+│   ├── bot_runner.py                 # Telegram bot daemon thread
 │   ├── tests/
 │   │   └── test_engines.py           # 67 comprehensive pytest tests
 │   ├── .env.example                  # Environment variable template
@@ -251,18 +249,29 @@ aide_os/
 │   │   ├── api/
 │   │   │   └── client.js             # Axios API client
 │   │   ├── components/
-│   │   │   └── Layout.jsx            # Sidebar & navigation shell
+│   │   │   └── Layout.jsx            # Sidebar & navigation shell with theme toggle & language selector
 │   │   ├── hooks/
 │   │   │   └── useApi.js             # Generic async API hook
+│   │   ├── i18n/
+│   │   │   ├── index.jsx             # React context and provider for translation processing
+│   │   │   └── translations/
+│   │   │       ├── en.json           # English (196 lines)
+│   │   │       ├── te.json           # Telugu
+│   │   │       ├── hi.json           # Hindi
+│   │   │       ├── ta.json           # Tamil
+│   │   │       └── ka.json           # Kannada
 │   │   ├── pages/
 │   │   │   ├── HomePage.jsx          # Dashboard, chipflation snapshot, sale calendar
 │   │   │   ├── DiagnosePage.jsx      # Device diagnosis form & URL results
 │   │   │   ├── RecommendPage.jsx     # Product recommender & alternative cards
 │   │   │   ├── EMIAuditPage.jsx      # EMI hidden charge auditor
-│   │   │   └── ChipflationPage.jsx   # DI calculator & spot-market table
+│   │   │   ├── ChipflationPage.jsx   # DI calculator & spot-market table + region selector
+│   │   │   ├── FullDecisionPage.jsx  # Combined master decision engine
+│   │   │   ├── DashboardPage.jsx     # Watchlist, history, auto-refresh
+│   │   │   └── TrendsPage.jsx        # Region & product filters, bar chart
 │   │   ├── App.jsx                   # Router & page wiring
 │   │   ├── index.jsx                 # React root mount
-│   │   └── index.css                 # Global design tokens & component styles
+│   │   └── index.css                 # Global design tokens & component styles (warm amber #d97706, DM Sans, dark #0c0a09)
 │   ├── .env.example                  # Frontend environment template
 │   ├── index.html                    # Vite HTML entry point
 │   ├── vite.config.js                # Vite + proxy config
@@ -289,28 +298,26 @@ aide_os/
 
 ## 🚀 Zero-Cost Deployment (₹0 Investment)
 
-Deploy the entire stack for **zero cost** using free tiers of **SnapDeploy**, Vercel, Neon, and Upstash. **No credit card required** — ever.
+Deploy the entire stack for **zero cost** using free tiers of **Render**, **Vercel**, **Neon**, and **Upstash**. **No credit card required** — ever.
 
 ### Deployment Architecture
 
 ```
-┌──────────────────────┐     ┌─────────────────────────────┐
-│   Vercel (Free)      │────▶│  SnapDeploy (Free)          │
-│   React Frontend     │     │  FastAPI Backend + Bot      │
-│   Auto-deploy on     │     │  2 containers, 100 hrs      │
-│   every push         │     │  Auto-sleep/wake 10-30s     │
-└──────────────────────┘     └─────────────┬───────────────┘
-                                          │
-                              ┌───────────┴───────────┐
-                              │                       │
-                    ┌─────────▼──────┐      ┌────────▼──────────┐
-                    │  Neon (Free)   │      │  Upstash (Free)    │
-                    │  PostgreSQL    │      │  Redis             │
-                    │  0.5GB storage │      │  256MB / 500K cmds │
-                    └────────────────┘      └────────────────────┘
+┌──────────────────┐     ┌─────────────────────────────┐
+│   Vercel (Free)  │────▶│  Render (Free)              │
+│   React Frontend │     │  FastAPI Backend + Bot      │
+│   Auto-deploy on │     │  1 container, 750 hrs       │
+│   every push     │     │  Auto-sleep/wake 10-30s     │
+└──────────────────┘     └─────────────┬───────────────┘
+                                       │
+                               ┌───────┴───────┐
+                               │               │
+                    ┌────────▼──────┐   ┌──────▼────────┐
+                    │  Neon (Free)  │   │  Upstash (Free)│
+                    │  PostgreSQL   │   │  Redis         │
+                    │  0.5GB storage│   │  256MB / 500K cmds│
+                    └────────────────┘   └────────────────┘
 ```
-
----
 
 ### Step 1: Neon PostgreSQL (2 min)
 
@@ -321,8 +328,6 @@ Deploy the entire stack for **zero cost** using free tiers of **SnapDeploy**, Ve
 
 > **Tip:** Neon's free tier gives you 0.5GB storage, enough for **10,000+ products**.
 
----
-
 ### Step 2: Upstash Redis (2 min)
 
 1. Sign up at [upstash.com](https://upstash.com) — **no credit card required**
@@ -331,69 +336,51 @@ Deploy the entire stack for **zero cost** using free tiers of **SnapDeploy**, Ve
 
 > **Tip:** Free tier includes 256MB storage and 500K commands/month — more than enough for rate limiting and caching.
 
----
-
 ### Step 3: GitHub Repository (1 min)
 
-1. Ensure code is pushed to GitHub (already done: [github.com/AiWujie/aide_os](https://github.com/AiWujie/aide_os))
-2. Make sure the repository is **public** (required for SnapDeploy free tier)
+1. Ensure code is pushed to GitHub (already done: [github.com/srohithadithya/omni-gadget](https://github.com/srohithadithya/omni-gadget))
+2. Make sure the repository is **public** (required for Render free web service)
 
----
+### Step 4: Render Backend + Bot (5 min)
 
-### Step 4: SnapDeploy Backend + Bot (5 min)
-
-1. Sign up at [snapdeploy.dev](https://snapdeploy.dev) — **no credit card required**
-2. Click **New Container** → **Connect GitHub** → select `aide_os` repo
-3. **Deploy Backend** (FastAPI):
-   - Container name: `aide-os-api` (becomes `aide-os-api.containers.snapdeploy.app`)
-   - Root directory: `backend`
-   - Uses `backend/Dockerfile` (already included)
-   - Port: `8000`
-   - Health check path: `/api/v1/health`
-   - Environment variables (add in dashboard):
+1. Sign up at [render.com](https://render.com) — **no credit card required**
+2. Click **New +** → **Web Service** → Connect GitHub → select `omni-gadget` repo
+3. **Configure Backend Service**:
+   - Name: `omni-gadget-api`
+   - Region: Choose closest to users
+   - Branch: `main`
+   - Root Directory: `backend`
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+   - Environment Variables (add in dashboard):
      - `DATABASE_URL` — from Step 1
      - `REDIS_URL` — from Step 2
-     - `SECRET_KEY` — generate: `python -c "import secrets; print(secrets.token_hex(32))"`
-     - `DEBUG` = `false`
-     - `ENVIRONMENT` = `production`
-     - `CORS_ORIGINS` = `["https://aide-os.vercel.app","http://localhost:3000"]`
-4. **Deploy Bot** (Telegram):
-   - Click **New Container** → same repo
-   - Container name: `aide-os-bot`
-   - Root directory: `bot`
-   - Uses `bot/Dockerfile` (already included)
-   - No port needed (background worker)
-   - Environment variables:
-     - `DATABASE_URL` — from Step 1
      - `TELEGRAM_BOT_TOKEN` — from [@BotFather](https://t.me/BotFather)
      - `BOT_CHAT_ID` — your Telegram chat ID
-5. Click **Deploy** — builds in ~2-3 minutes
+     - `SECRET_KEY` — generate: `python -c "import secrets; print(secrets.token_hex(32))"`
+     - `ENVIRONMENT` = `production`
+     - `DEBUG` = `false`
+   - Under **Advanced** → **Health Check Path**: `/api/v1/health`
+4. Click **Create Web Service** — builds in ~2-3 minutes
+5. **Note**: The Telegram bot runs automatically as a daemon thread inside the backend process (see `bot_runner.py`)
 
-> **Verify:** Visit `https://aide-os-api.containers.snapdeploy.app/docs` to see the Swagger UI.
-
----
+> **Verify:** Visit `https://omni-gadget.onrender.com/docs` to see the Swagger UI.
 
 ### Step 5: Vercel Frontend (3 min)
 
 1. Sign up at [vercel.com](https://vercel.com) with your GitHub account
-2. Click **Import** → select the `aide_os` repository
+2. Click **New Project** → Import → select the `omni-gadget` repository
 3. Configure:
-
-| Setting | Value |
-|---------|-------|
-| **Framework Preset** | Vite |
-| **Root Directory** | `frontend` |
-| **Build Command** | `npm run build` |
-| **Output Directory** | `dist` |
-
-4. Add environment variable:
-   - `VITE_API_URL` = `https://aide-os-api.containers.snapdeploy.app`
-
-5. Click **Deploy** — builds in ~30 seconds
+   - Framework Preset: Vite
+   - Root Directory: `frontend`
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+   - Install Command: `npm install`
+   - Environment Variable:
+     - `VITE_API_URL` = `https://omni-gadget.onrender.com`
+4. Click **Deploy** — builds in ~30 seconds
 
 > **Bonus:** Vercel auto-deploys on every push to `main`. Custom domains are free.
-
----
 
 ### Step 6: Chrome Extension (optional, 10 min)
 
@@ -409,15 +396,14 @@ Deploy the entire stack for **zero cost** using free tiers of **SnapDeploy**, Ve
 
 | Variable | Where to Set | Description |
 |----------|-------------|-------------|
-| `DATABASE_URL` | SnapDeploy Backend + Bot | PostgreSQL connection string from Neon |
-| `REDIS_URL` | SnapDeploy Backend | Redis URL from Upstash |
-| `SECRET_KEY` | SnapDeploy Backend | JWT/session secret — generate a random 64-char hex string |
-| `TELEGRAM_BOT_TOKEN` | SnapDeploy Bot | Telegram Bot API token from @BotFather |
-| `BOT_CHAT_ID` | SnapDeploy Bot | Target Telegram chat/group ID for notifications |
-| `VITE_API_URL` | Vercel Frontend | Backend API URL (e.g. `https://aide-os-api.containers.snapdeploy.app`) |
-| `DEBUG` | SnapDeploy Backend | Set to `false` for production |
-| `ENVIRONMENT` | SnapDeploy Backend | Set to `production` |
-| `CORS_ORIGINS` | SnapDeploy Backend | JSON array of allowed origins (Vercel URL + localhost) |
+| `DATABASE_URL` | Render Backend + Bot | PostgreSQL connection string from Neon |
+| `REDIS_URL` | Render Backend | Redis URL from Upstash |
+| `TELEGRAM_BOT_TOKEN` | Render Backend | Telegram Bot API token from @BotFather |
+| `BOT_CHAT_ID` | Render Backend | Target Telegram chat/group ID for notifications |
+| `SECRET_KEY` | Render Backend | JWT/session secret — generate a random 64-char hex string |
+| `ENVIRONMENT` | Render Backend | Set to `production` |
+| `DEBUG` | Render Backend | Set to `false` |
+| `VITE_API_URL` | Vercel Frontend | Backend API URL (e.g. `https://omni-gadget.onrender.com`) |
 
 ---
 
@@ -425,27 +411,25 @@ Deploy the entire stack for **zero cost** using free tiers of **SnapDeploy**, Ve
 
 | Service | Free Tier Limit | Impact | Mitigation |
 |---------|----------------|--------|------------|
-| **SnapDeploy** | 2 containers, 100 hrs total runtime | Auto-sleeps after idle, 10-30s cold start | Auto-wakes on traffic; Always-On $12/mo if needed |
+| **Render** | 750 hours/month | Auto-sleeps after idle, 10-30s cold start | Auto-wakes on traffic; Always-On $7/mo if needed |
 | **Neon** | 0.5GB storage, 100 compute-hours/mo | Enough for 10K+ products | Scale-to-zero saves compute hours |
 | **Upstash** | 256MB, 500K commands/mo | Sufficient for rate limiting & caching | Monitor usage in dashboard |
 | **Vercel** | Unlimited builds & bandwidth | Always-on, no cold starts | Best free tier of the stack |
 
-> **Note:** SnapDeploy free tier hours never expire. Use at your own pace. For 24/7 uptime, Always-On starts at $12/mo per container.
-
----
+> **Note:** Render free tier hours renew monthly. Use at your own pace. For 24/7 uptime, Always-On starts at $7/mo.
 
 ### One-Click Deploy
 
 | Service | Button |
 |---------|--------|
 | **Frontend** (Vercel) | [![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new) |
-| **Backend** (SnapDeploy) | [![Deploy to SnapDeploy](https://snapdeploy.dev/button.svg)](https://snapdeploy.dev/new) |
+| **Backend** (Render) | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy) |
 
 ---
 
 ## 🔌 API Reference
 
-Base URL (deployed): `https://aide-os-api.onrender.com`
+Base URL (deployed): `https://omni-gadget.onrender.com`
 
 | Method | Endpoint | Module | Description |
 |--------|----------|--------|-------------|
@@ -466,7 +450,7 @@ Full interactive docs available at `/docs` (Swagger UI) and `/redoc` (ReDoc).
 ### Example — Full Decision Request
 
 ```bash
-curl -X POST https://aide-os-api.onrender.com/api/v1/full-decision \
+curl -X POST https://omni-gadget.onrender.com/api/v1/full-decision \
   -H "Content-Type: application/json" \
   -d '{
     "current_category": "mobile",
@@ -546,9 +530,13 @@ Each engine module has been validated with weighted scoring criteria:
 | **Frontend** | React 18 + Vite 6 | Multi-page SPA with hot reload |
 | **Routing** | React Router v6 | Client-side page navigation |
 | **HTTP Client** | Axios | API calls with interceptors |
+| **i18n** | React Context | 5-language support (EN, TE, HI, TA, KA) |
+| **Icons** | Lucide React | Consistent, accessible icons (zero emojis) |
+| **Styling** | CSS Variables | Warm amber (`--primary: #d97706`), dark mode (`--bg: #0c0a09`), DM Sans font |
 | **Backend** | Python 3.11 + FastAPI | Async REST API engine |
 | **Validation** | Pydantic v2 | Request / response schema validation |
 | **Server** | Uvicorn | ASGI production server |
+| **Background Worker** | Thread daemon | Telegram bot runs inside backend process |
 | **Database** | PostgreSQL 16 (Neon) | Gadget catalogue + financial meta |
 | **Cache** | Redis 7 (Upstash) | Live price caching + rate limiting |
 | **Containers** | Docker + Compose | One-command full-stack deployment |
@@ -561,7 +549,7 @@ Each engine module has been validated with weighted scoring criteria:
 ## 📱 Supported Categories
 
 | Category | Use Cases | Chipflation Risk |
-|----------|-----------|-----------------|
+|----------|-----------|------------------|
 | 📱 **Mobile** | Gaming · Daily Tasks · Multitasking · Photography | 🔴 HIGH — LPDDR5X +18.5% YoY |
 | 💻 **Laptop** | Coding · Data Science · Video Editing · Productivity | 🔴 HIGH — DDR5 +22.1% YoY |
 | 🎧 **Audio** | ANC · Music · Remote Work · Travel | 🟢 LOW — BT SoC stable |
@@ -601,8 +589,8 @@ Contributions welcome! Here's how to get started:
 1. **Fork** the repository
 2. **Clone** your fork:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/aide_os.git
-   cd aide_os
+   git clone https://github.com/YOUR_USERNAME/omni-gadget.git
+   cd omni-gadget
    ```
 3. **Set up** for local development:
    ```bash
@@ -648,12 +636,11 @@ Remaining roadmap items to tackle:
 - [ ] **Mobile app (React Native)** — Native iOS/Android experience with push notifications
 - [ ] **Batch price comparison tool** — Compare prices across 10+ e-commerce platforms simultaneously
 - [ ] **ML price prediction model** — Forecast future price movements using historical chipflation data
-- [ ] **Multi-language support** — Hindi, Tamil, Telugu, and other Indian regional languages
 - [ ] **API rate limiting dashboard** — Usage monitoring and abuse prevention for public API consumers
 
 ### Recently Completed ✅
 
-- [x] Telegram price-drop notification bot
+- [x] Telegram price-drop notification bot (daemon thread in backend)
 - [x] Chrome Extension (Manifest V3) for inline price checking
 - [x] DB-backed product catalogue (100+ products across 6 categories)
 - [x] Device telemetry + EMI audit logging
@@ -661,6 +648,12 @@ Remaining roadmap items to tackle:
 - [x] 67 comprehensive tests across all 4 engines
 - [x] Zero-cost cloud deployment (Render + Vercel + Neon + Upstash)
 - [x] PWA support for mobile web install
+- [x] **Full 5-language i18n** (EN, TE, HI, TA, KA) with Lucide icons — **zero emojis**
+- [x] Light/dark mode toggle with system preference detection
+- [x] Device auto-diagnosis via `navigator.userAgent`
+- [x] Chipflation automated mode with Decision Index
+- [x] EMI calculator with GST breakdown + ITC toggle
+- [x] Region selector on Trends page (India, USA, Europe, SEA)
 
 ---
 
@@ -673,4 +666,5 @@ MIT — Open source, free to use, fork, and extend.
 <div align="center">
   <sub>Built to fight planned obsolescence and provide full consumer financial transparency.</sub><br/>
   <sub><em>Always check the Chipflation Index before upgrading your hardware.</em></sub>
+</div>
 </div>

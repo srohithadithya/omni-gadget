@@ -8,11 +8,11 @@ AI Decision Engine for Indian e-commerce — real-time chipflation risk analysis
 - **Chipflation Risk Analysis** — sends product data to the AIDE-OS backend and displays a Decision Index score with risk level, price trend, and market signal
 - **Watchlist** — save products to a local watchlist for periodic re-analysis
 - **Floating Badge** — AIDE-OS badge on product pages for quick access
-- **Dark Theme** — matches the AIDE-OS design system (#0f1117 background, #6366f1 indigo primary)
+- **Dark Theme** — matches the AIDE-OS design system (#0c0a09 background, #d97706 amber primary)
 
 ## Prerequisites
 
-- AIDE-OS backend running at `http://localhost:8000` (or your configured URL)
+- AIDE-OS backend running at `https://omni-gadget.onrender.com` (production) or your local dev URL
 - Google Chrome 88+ (Manifest V3 support)
 - Developer mode enabled in Chrome Extensions
 
@@ -45,17 +45,17 @@ AI Decision Engine for Indian e-commerce — real-time chipflation risk analysis
 
 ## Configuration
 
-The backend API URL defaults to `http://localhost:8000`. To change it:
+The backend API URL defaults to `https://omni-gadget.onrender.com`. To change it:
 
 ```javascript
 // In the Chrome DevTools console for the extension:
-chrome.storage.local.set({ apiUrl: "http://your-server:8000" });
+chrome.storage.local.set({ apiUrl: "https://your-backend-url" });
 ```
 
 Or use the background service worker message:
 
 ```javascript
-chrome.runtime.sendMessage({ type: "UPDATE_API_URL", data: { url: "http://your-server:8000" } });
+chrome.runtime.sendMessage({ type: "UPDATE_API_URL", data: { url: "https://your-backend-url" } });
 ```
 
 ## API Endpoint
