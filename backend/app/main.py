@@ -87,6 +87,16 @@ def root():
             "GET  /api/v1/history",
             "GET  /api/v1/popular",
             "GET  /api/v1/trends",
+            "POST /api/v1/scrape",
+            "POST /api/v1/price-compare",
+            "GET  /api/v1/platforms",
+            "GET  /api/v1/chipflation/trends",
+            "GET  /api/v1/chipflation/refresh",
+            "GET  /api/v1/predictions",
+            "POST /api/v1/deals/submit",
+            "POST /api/v1/deals/vote",
+            "GET  /api/v1/deals",
+            "GET  /api/v1/deals/stats",
         ],
     }
 
@@ -378,6 +388,279 @@ def get_trends():
     except Exception:
         return {"trends": []}
 
+
+# ─── Price Scraper & Comparison Endpoints ───────────────────────────────────
+
+@app.post("/api/v1/scrape", tags=["Price Scraper"])
+async def scrape_product_price(url: str):
+    """
+    Scrape real-time price from Amazon.in or Flipkart.com product URL.
+    Returns product title, current price, availability, and metadata.
+    """
+    from app.engines.scraping_engine import scrape_product
+    try:
+        result = await scrape_product(url)
+        return {
+            "product_id": result.product_id,
+            "platform": result.platform,
+            "title": result.title,
+            "price": result.price,
+            "currency": result.currency,
+            "image_url": result.image_url,
+            "availability": result.availability,
+            "rating": result.rating,
+            "review_count": result.review_count,
+            "url": result.url,
+            "scraped_at": result.scraped_at,
+            "error": result.error,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/price-compare", tags=["Price Comparison"])
+async def compare_prices(query: str, category: str = "general"):
+    """
+    Compare prices across 10+ e-commerce platforms simultaneously.
+    Returns lowest, highest, average prices and per-platform breakdown.
+    """
+    from app.engines.price_comparison import compare_prices as compare
+    try:
+        result = await compare(query, category)
+        return {
+            "product_query": result.product_query,
+            "category": result.category,
+            "lowest_price": result.lowest_price,
+            "highest_price": result.highest_price,
+            "avg_price": result.avg_price,
+            "savings_vs_highest": result.savings_vs_highest,
+            "best_deal_platform": result.best_deal_platform,
+            "platforms_checked": result.platforms_checked,
+            "comparison_time": result.comparison_time,
+            "prices": [
+                {
+                    "platform": p.platform,
+                    "price": p.price,
+                    "url": p.url,
+                    "availability": p.availability,
+                    "seller": p.seller,
+                    "shipping": p.shipping,
+                    "total_cost": p.total_cost,
+                    "error": p.error,
+                }
+                for p in result.prices
+            ],
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/platforms", tags=["Price Comparison"])
+def get_platforms():
+    """List all supported e-commerce platforms for price comparison."""
+    from app.engines.price_comparison import get_supported_platforms
+    return {"platforms": get_supported_platforms()}
+
+
+# ─── TrendForce / Chipflation Live Data ─────────────────────────────────────
+
+@app.get("/api/v1/chipflation/trends", tags=["Chipflation Live"])
+async def get_chipflation_trends():
+    """
+    Get live chipflation trends from TrendForce/DRAMeXchange.
+    Returns component-level price changes and predictions.
+    """
+    from app.engines.trendforce import get_chipflation_trends as fetch_trends, calculate_composite_chipflation_index
+    try:
+        trends = await fetch_trends()
+        composite_index = calculate_composite_chipflation_index(trends)
+        
+        return {
+            "composite_index": composite_index,
+            "market_status": "INFLATED" if composite_index > 1.10 else "STABLE" if composite_index > 0.98 else "DEFLATING",
+            "components": [
+                {
+                    "component": t.component,
+                    "current_price_usd": t.current_price,
+                    "prev_price_usd": t.prev_price,
+                    "change_pct": t.change_pct,
+                    "trend": t.trend,
+                    "prediction": t.prediction_next_quarter,
+                    "confidence": t.confidence,
+                    "sources": t.sources,
+                }
+                for t in trends
+            ],
+            "last_updated": trends[0].sources[0] if trends else "N/A",
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/chipflation/refresh", tags=["Chipflation Live"])
+async def refresh_chipflation_data():
+    """
+    Force refresh of chipflation data from TrendForce.
+    Useful for manual data refresh or admin operations.
+    """
+    from app.engines.trendforce import fetch_trendforce_latest
+    try:
+        data_points = await fetch_trendforce_latest()
+        
+        # Update DB with fresh data
+        from app.db import update_chipflation_index
+        updated = 0
+        for dp in data_points:
+            try:
+                update_chipflation_index(
+                    component_type=dp.component_type,
+                    spot_price_usd=dp.spot_price_usd,
+                    mom_growth_pct=dp.mom_growth_pct,
+                    yoy_growth_pct=dp.yoy_growth_pct or 0.0,
+                    source=dp.source
+                )
+                updated += 1
+            except Exception:
+                pass
+        
+        return {
+            "status": "ok",
+            "data_points_found": len(data_points),
+            "database_updates": updated,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── ML Price Predictions ───────────────────────────────────────────────────
+
+@app.get("/api/v1/predictions", tags=["ML Predictions"])
+def get_price_predictions(category: str = None):
+    """
+    Get ML-based price predictions for components or a specific category.
+    Uses linear regression on historical TrendForce data.
+    """
+    from app.engines.ml_predictor import predict_all_components, get_category_price_outlook
+    try:
+        if category:
+            outlook = get_category_price_outlook(category)
+            return {"category_outlook": outlook}
+        else:
+            predictions = predict_all_components()
+            return {
+                "predictions": [
+                    {
+                        "component": p.component,
+                        "current_price": p.current_price,
+                        "predicted_1m": p.predicted_price_1m,
+                        "predicted_3m": p.predicted_price_3m,
+                        "predicted_6m": p.predicted_price_6m,
+                        "trend": p.trend,
+                        "confidence": p.confidence,
+                        "factors": p.factors,
+                        "recommendation": p.recommendation,
+                    }
+                    for p in predictions
+                ]
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── Deal Verification & Community ──────────────────────────────────────────
+
+@app.post("/api/v1/deals/submit", tags=["Deal Verification"])
+def submit_deal(deal_data: dict):
+    """
+    Submit a deal for community verification.
+    Other users can vote on whether the deal is real.
+    """
+    from app.engines.deal_verification import submit_deal as submit, DealSubmission
+    try:
+        deal = DealSubmission(
+            product_url=deal_data.get("product_url", ""),
+            platform=deal_data.get("platform", ""),
+            product_title=deal_data.get("product_title", ""),
+            deal_price=deal_data.get("deal_price", 0.0),
+            original_price=deal_data.get("original_price", 0.0),
+            coupon_code=deal_data.get("coupon_code"),
+            submitted_by=deal_data.get("submitted_by", "anonymous"),
+            notes=deal_data.get("notes"),
+        )
+        result = submit(deal)
+        return {
+            "deal_id": result.deal_id,
+            "status": result.verification_status,
+            "message": "Deal submitted for verification",
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/deals/vote", tags=["Deal Verification"])
+def vote_deal(deal_id: str, vote: str, voter_id: str, reason: str = None):
+    """
+    Vote on a deal (up = real deal, down = fake/expired).
+    Helps community verify deal authenticity.
+    """
+    from app.engines.deal_verification import vote_on_deal, DealVote
+    try:
+        vote_obj = DealVote(
+            deal_id=deal_id,
+            voter_id=voter_id,
+            vote=vote,
+            reason=reason,
+        )
+        result = vote_on_deal(deal_id, vote_obj)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/deals", tags=["Deal Verification"])
+def list_deals(platform: str = None, status: str = None, min_discount_pct: float = 0):
+    """
+    List community-submitted deals with optional filters.
+    Returns deals sorted by vote score (best deals first).
+    """
+    from app.engines.deal_verification import list_deals as list_d
+    try:
+        deals = list_d(platform=platform, status=status, min_discount_pct=min_discount_pct)
+        return {
+            "deals": [
+                {
+                    "deal_id": d.deal_id,
+                    "product_url": d.product_url,
+                    "platform": d.platform,
+                    "product_title": d.product_title,
+                    "deal_price": d.deal_price,
+                    "original_price": d.original_price,
+                    "discount_pct": round((d.original_price - d.deal_price) / d.original_price * 100, 1) if d.original_price > 0 else 0,
+                    "coupon_code": d.coupon_code,
+                    "submitted_by": d.submitted_by,
+                    "submitted_at": d.submitted_at,
+                    "votes_up": d.votes_up,
+                    "votes_down": d.votes_down,
+                    "verification_status": d.verification_status,
+                    "notes": d.notes,
+                }
+                for d in deals
+            ],
+            "total": len(deals),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/deals/stats", tags=["Deal Verification"])
+def deal_stats():
+    """Get overall deal verification statistics."""
+    from app.engines.deal_verification import get_deal_stats
+    return get_deal_stats()
+
+
+# ─── Combined Master Endpoint ─────────────────────────────────────────────────
 
 @app.post("/api/v1/full-decision", tags=["Master — Full Decision Engine"])
 def full_decision(req: FullDecisionRequest, request: Request = None):
