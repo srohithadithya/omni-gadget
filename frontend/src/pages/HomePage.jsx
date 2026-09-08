@@ -1,205 +1,90 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Smartphone,
-  Laptop,
-  Headphones,
-  Watch,
-  Activity as ActivityIcon,
-  Target as TargetIcon,
-  CreditCard as CreditCardIcon,
-  TrendingUp as TrendingUpIcon,
-} from 'lucide-react';
-
-const STATS = [
-  { label: 'Device Categories', value: '6', icon: Smartphone, bg: 'bg-blue-50' },
-  { label: 'Products in DB', value: '20+', icon: Laptop, bg: 'bg-green-50' },
-  { label: 'Hidden Fee Types', value: '4', icon: Headphones, bg: 'bg-purple-50' },
-  { label: 'Sale Events Tracked', value: '8', icon: Watch, bg: 'bg-orange-50' },
-];
+import { useI18n } from '../i18n';
+import { Activity, Target, CreditCard, TrendingUp, Zap, LayoutDashboard, BarChart3 } from 'lucide-react';
 
 const FEATURES = [
-  {
-    icon: ActivityIcon,
-    title: 'Device Diagnosis',
-    desc: "Calculate your device's Useful Remaining Life (URL) score based on battery health, storage wear, and age.",
-    path: '/diagnose',
-  },
-  {
-    icon: TargetIcon,
-    title: 'Smart Recommendations',
-    desc: 'Get requirement-matched gadget suggestions with pros/cons, chipflation risk ratings, and refurbished alternatives.',
-    path: '/recommend',
-  },
-  {
-    icon: CreditCardIcon,
-    title: 'EMI Hidden Fee Audit',
-    desc: 'Expose what \"No-Cost EMI\" actually costs — processing fees, 18% GST on interest, and forgone cash discounts.',
-    path: '/emi-audit',
-  },
-  {
-    icon: TrendingUpIcon,
-    title: 'Chipflation Index',
-    desc: 'Real-time Buy vs Hold Decision Index based on upstream DRAM/NAND component inflation data.',
-    path: '/chipflation',
-  },
-];
-
-const CHIPFLATION_DATA = [
-  { component: 'LPDDR5X (Mobile RAM)', risk: 'HIGH', mom: '+4.2%', yoy: '+18.5%', impact: 'Price inflation passed to consumers' },
-  { component: 'DDR5 SO-DIMM (Laptop)', risk: 'HIGH', mom: '+3.8%', yoy: '+22.1%', impact: 'Price inflation passed to consumers' },
-  { component: '3D NAND TLC (Storage)', risk: 'HIGH', mom: '+5.1%', yoy: '+24.3%', impact: 'Price inflation passed to consumers' },
-  { component: 'HBM3E (AI Enterprise)', risk: 'CRITICAL', mom: '+2.1%', yoy: '+41.0%', impact: 'Enterprise-focused, limited consumer impact' },
-  { component: 'Bluetooth SoC (Audio)', risk: 'STABLE', mom: '+0.4%', yoy: '+2.1%', impact: 'Stable — good time to buy' },
-  { component: 'Micro-AMOLED (Wearable)', risk: 'LOW', mom: '+0.8%', yoy: '+4.3%', impact: 'Minor impact, monitor' },
-];
-
-const SALE_EVENTS = [
-  { name: 'Big Billion Days', date: 'Oct 1–6, 2026', platform: 'Flipkart', discount: '~20%', cats: 'Mobile, Laptop, TV' },
-  { name: 'Great Indian Festival', date: 'Oct 1–6, 2026', platform: 'Amazon', discount: '~18%', cats: 'Mobile, Laptop, Audio' },
-  { name: 'Black Friday', date: 'Nov 27–30, 2026', platform: 'All', discount: '~22%', cats: 'Laptop, Mobile, All' },
+  { icon: Activity, path: '/diagnose', key: 'NAV.nav_diagnose', desc: 'Check your device health and get a longevity score' },
+  { icon: Target, path: '/recommend', key: 'NAV.nav_recommend', desc: 'Find the best gadgets for your budget and needs' },
+  { icon: CreditCard, path: '/emi-audit', key: 'NAV.nav_emi', desc: 'Uncover hidden EMI charges and true cost with GST' },
+  { icon: TrendingUp, path: '/chipflation', key: 'NAV.nav_chipflation', desc: 'Track market pricing pressure and chip shortage impact' },
+  { icon: Zap, path: '/full-decision', key: 'NAV.nav_decision', desc: 'Run all engines at once for a complete recommendation' },
+  { icon: LayoutDashboard, path: '/dashboard', key: 'NAV.nav_dashboard', desc: 'Track all your decisions and scores in one place' },
+  { icon: BarChart3, path: '/trends', key: 'NAV.nav_trends', desc: 'See popular products and market trends by region' },
 ];
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   return (
     <div>
-      {/* Hero */}
-      <section className="mb-10">
-        <div className="max-w-3xl mx-auto text-center">
-          <h1 className="mb-4">Make smarter gadget decisions</h1>
-          <p className="text-muted mb-6">
-            Beat chipflation. Know when to buy, when to hold, and what your \"No-Cost EMI\"\n            actually costs. Powered by real supply-chain data, device diagnostics, and\n            transparent financial math.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <button
-              className="btn btn-primary"
-              onClick={() => navigate('/diagnose')}
-            >
-              Diagnose Your Device
-            </button>
-            <button
-              className="btn btn-outline"
-              onClick={() => navigate('/recommend')}
-            >
-              Find Best Gadget
-            </button>
-          </div>
+      {/* Hero Banner */}
+      <div className="gradient-banner" style={{ marginBottom: 'var(--spacing-8)', textAlign: 'center' }}>
+        <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary)', marginBottom: 8, letterSpacing: '-0.02em' }}>
+          {t('HOME.home_title')}
         </div>
-      </section>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', maxWidth: 600, margin: '0 auto var(--spacing-6)', lineHeight: 1.7 }}>
+          {t('HOME.home_subtitle')}
+        </p>
+        <button
+          className="btn btn-primary"
+          onClick={() => navigate('/full-decision')}
+          style={{ fontSize: '0.95rem', padding: '12px 28px', borderRadius: 'var(--radius-full)' }}
+        >
+          <Zap size={18} style={{ marginRight: 6 }} />
+          {t('HOME.home_run_full')}
+        </button>
+      </div>
 
-      {/* Stats */}
-      <section className="mb-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {STATS.map((stat) => (
-            <div
-              key={stat.label}
-              className="card text-center p-6"
-            >
-              <div className="flex h-10 w-10 items-center justify-center mb-3" style={{ backgroundColor: stat.bg.replace('bg-', '').replace('-50', '') + '20' }}>
-                <stat.icon className="h-5 w-5" style={{ color: stat.bg.replace('bg-', '').replace('-50', '') + '600' }} />
-              </div>
-              <p className="stat-value">{stat.value}</p>
-              <p className="stat-label">{stat.label}</p>
+      {/* Feature Grid */}
+      <div style={{ marginBottom: 'var(--spacing-6)' }}>
+        <div className="section-divider" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+          {t('HOME.home_quick_start')}
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--spacing-4)' }}>
+        {FEATURES.map((feat, i) => (
+          <div
+            key={feat.path}
+            className={`card animate-fade-in-up stagger-${i + 1}`}
+            onClick={() => navigate(feat.path)}
+            style={{
+              cursor: 'pointer',
+              padding: 'var(--spacing-5)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 'var(--spacing-3)',
+            }}
+          >
+            <div style={{
+              width: 40, height: 40, borderRadius: 'var(--radius-md)',
+              background: 'rgba(217,119,6,0.1)', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', flexShrink: 0,
+            }}>
+              <feat.icon size={20} color="var(--primary)" />
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="mb-10">
-        <div className="mb-6">
-          <h2 className="section-divider">Core Engines</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {FEATURES.map((feature) => (
-            <div
-              key={feature.path}
-              className="card p-6 hover:bg-bg-card-hover transition-colors cursor-pointer"
-              onClick={() => navigate(feature.path)}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex h-10 w-10 items-center justify-center mb-0" style={{ backgroundColor: 'rgba(217, 119, 6, 0.05)' }}>
-                  <feature.icon className="h-5 w-5" style={{ color: 'var(--primary)' }} />
-                </div>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: '0.92rem', marginBottom: 4 }}>
+                {t(feat.key)}
               </div>
-              <h3 className="mb-3">{feature.title}</h3>
-              <p className="text-muted text-sm mb-4">{feature.desc}</p>
-              <div className="text-sm text-primary hover:text-primary-hover">
-                Learn more →
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                {feat.desc}
               </div>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Chipflation Snapshot */}
-      <section className="mb-10">
-        <div className="mb-6">
-          <h2 className="section-divider">Live Chipflation Snapshot</h2>
-        </div>
-        <div class="card">
-          <div class="overflow-x-auto">
-            <table className="table w-full">
-              <thead>
-                <tr>
-                  <th className="text-left text-muted font-medium text-xs uppercase tracking-wider">Component</th>
-                  <th className="text-left text-muted font-medium text-xs uppercase tracking-wider">Risk Level</th>
-                  <th className="text-left text-muted font-medium text-xs uppercase tracking-wider">MoM Growth</th>
-                  <th className="text-left text-muted font-medium text-xs uppercase tracking-wider">YoY Growth</th>
-                  <th className="text-left text-muted font-medium text-xs uppercase tracking-wider">Consumer Impact</th>
-                </tr>
-              </thead>
-              <tbody>
-                {CHIPFLATION_DATA.map((row, index) => (
-                  <tr key={index} className="border-b border-border hover:bg-bg-card-hover">
-                    <td className="p-4 text-sm">{row.component}</td>
-                    <td className="p-4 text-sm flex items-center">
-                      <span className={`badge badge-${row.risk === 'HIGH' ? 'error' : row.risk === 'CRITICAL' ? 'error' : row.risk === 'STABLE' ? 'success' : 'warning'}`}>
-                        {row.risk}
-                      </span>
-                    </td>
-                    <td className="p-4 text-sm font-medium text-danger">{row.mom}</td>
-                    <td className="p-4 text-sm font-medium text-danger">{row.yoy}</td>
-                    <td className="p-4 text-sm text-muted">{row.impact}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
+        ))}
+      </div>
 
-          <div className="alert alert-yellow mt-6">
-            <span className="alert-icon">⚠️</span>
-            <div className="alert-content">
-              <strong>Chipflation Alert — AI Infrastructure Cycle Active</strong><br />
-              TSMC, SK Hynix, and Micron have shifted capacity toward HBM3E and enterprise AI processors.
-              Consumer DRAM and NAND flash remain supply-constrained. Laptop and mobile price inflation
-              is expected to persist through Q1 2027.
-            </div>
-          </div>
+      {/* Status bar */}
+      <div className="card animate-fade-in" style={{ marginTop: 'var(--spacing-8)', padding: 'var(--spacing-4)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+        <div className="status-dot" style={{ justifyContent: 'center', marginBottom: 8 }}>
+          <span className="dot" />
+          <span>{t('COMMON.status_active')}</span>
         </div>
-      </section>
-
-      {/* Sale Calendar Preview */}
-      <section className="mb-10">
-        <div className="mb-6">
-          <h2 className="section-divider">Upcoming Optimal Buy Windows</h2>
-        </div>
-        <div className="card">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {SALE_EVENTS.map((event) => (
-              <div key={event.name} className="text-center p-4">
-                <span className="badge badge-outline mb-3">{event.platform}</span>
-                <h3 className="mb-2">{event.name}</h3>
-                <p className="text-muted text-sm mb-2">{event.date}</p>
-                <p className="text-success font-medium mb-2">{event.discount} off</p>
-                <p className="text-muted text-sm">{event.cats}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        {t('APP.tagline')}
+      </div>
     </div>
   );
 }

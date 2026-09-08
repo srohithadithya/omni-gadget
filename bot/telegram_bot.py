@@ -46,8 +46,8 @@ logger = logging.getLogger(__name__)
 # Bot token from environment
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 
-# --------------------------------------------------------------------------- 
-# URL / product helpers 
+# ---------------------------------------------------------------------------
+# URL / product helpers
 # ---------------------------------------------------------------------------
 
 def extract_product_name(url: str) -> str:
@@ -88,24 +88,24 @@ def is_valid_url(text: str) -> bool:
 # ---------------------------------------------------------------------------
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /start — greet the user and explain the bot."""
+    """Handle /start -- greet the user and explain the bot."""
     welcome = (
-        "👋 Welcome to **AIDE-OS Price Tracker**!\n\n"
+        "[*] Welcome to **AIDE-OS Price Tracker**!\n\n"
         "I monitor product prices on Amazon and Flipkart and alert you "
         "when they drop.\n\n"
-        "📦 **Commands**\n"
-        "• /track <url> — Start tracking a product\n"
-        "• /list — Show all your tracked products\n"
-        "• /setprice <id> <price> — Set a target price alert\n"
-        "• /remove <id> — Stop tracking a product\n"
-        "• /check — Run a price check now\n\n"
+        "[#] **Commands**\n"
+        "/track <url> -- Start tracking a product\n"
+        "/list -- Show all your tracked products\n"
+        "/setprice <id> <price> -- Set a target price alert\n"
+        "/remove <id> -- Stop tracking a product\n"
+        "/check -- Run a price check now\n\n"
         "Get started by pasting a product URL with /track!"
     )
     await update.message.reply_text(welcome, parse_mode="Markdown")  # type: ignore[union-attr]
 
 
 async def cmd_track(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /track <url> — add a product to the watch list."""
+    """Handle /track <url> -- add a product to the watch list."""
     if not context.args:
         await update.message.reply_text(  # type: ignore[union-attr]
             "Usage: /track <product_url>\n"
@@ -115,7 +115,7 @@ async def cmd_track(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     url = context.args[0].strip()
     if not is_valid_url(url):
-        await update.message.reply_text("❌ That doesn't look like a valid URL. Please try again.")  # type: ignore[union-attr]
+        await update.message.reply_text("[X] That doesn't look like a valid URL. Please try again.")  # type: ignore[union-attr]
         return
 
     user_id: int = update.effective_user.id  # type: ignore[union-attr]
@@ -124,29 +124,29 @@ async def cmd_track(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     watch_id = add_watch(user_id, url, product_name)
 
     await update.message.reply_text(  # type: ignore[union-attr]
-        f"✅ Now tracking!\n\n"
-        f"🆔 Watch ID: {watch_id}\n"
-        f"📦 {product_name}\n"
-        f"🔗 {url}\n\n"
+        f"[OK] Now tracking!\n\n"
+        f"[ID] Watch ID: {watch_id}\n"
+        f"[#] {product_name}\n"
+        f"[URL] {url}\n\n"
         f"Use /setprice {watch_id} <amount> to set a price alert."
     )
 
 
 async def cmd_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /list — show all products tracked by this user."""
+    """Handle /list -- show all products tracked by this user."""
     user_id: int = update.effective_user.id  # type: ignore[union-attr]
 
     rows = list_watches(user_id)
 
     if not rows:
-        await update.message.reply_text("📭 You aren't tracking any products yet.\nUse /track <url> to start.")  # type: ignore[union-attr]
+        await update.message.reply_text("[!] You aren't tracking any products yet.\nUse /track <url> to start.")  # type: ignore[union-attr]
         return
 
-    lines = ["📋 **Your Tracked Products**\n"]
+    lines = ["[#] **Your Tracked Products**\n"]
     for r in rows:
-        target_str = f"₹{r['target_price']:.2f}" if r["target_price"] > 0 else "Any drop"
+        target_str = f"\u20b9{r['target_price']:.2f}" if r["target_price"] > 0 else "Any drop"
         lines.append(
-            f"**#{r['id']}** — {r['product_name']}\n"
+            f"**#{r['id']}** -- {r['product_name']}\n"
             f"   Target: {target_str}\n"
             f"   {r['product_url']}\n"
         )
@@ -154,7 +154,7 @@ async def cmd_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def cmd_remove(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /remove <id> — delete a watch entry."""
+    """Handle /remove <id> -- delete a watch entry."""
     if not context.args:
         await update.message.reply_text("Usage: /remove <watch_id>")  # type: ignore[union-attr]
         return
@@ -162,7 +162,7 @@ async def cmd_remove(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     try:
         watch_id = int(context.args[0])
     except ValueError:
-        await update.message.reply_text("❌ Watch ID must be a number.")  # type: ignore[union-attr]
+        await update.message.reply_text("[X] Watch ID must be a number.")  # type: ignore[union-attr]
         return
 
     user_id: int = update.effective_user.id  # type: ignore[union-attr]
@@ -171,17 +171,17 @@ async def cmd_remove(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     rows = list_watches(user_id)
     row = next((r for r in rows if r['id'] == watch_id), None)
     if not row:
-        await update.message.reply_text("❌ Watch not found or doesn't belong to you.")  # type: ignore[union-attr]
+        await update.message.reply_text("[X] Watch not found or doesn't belong to you.")  # type: ignore[union-attr]
         return
 
     if remove_watch(watch_id, user_id):
-        await update.message.reply_text(f"🗑 Removed **{row['product_name']}** (#{watch_id}).", parse_mode="Markdown")  # type: ignore[union-attr]
+        await update.message.reply_text(f"[X] Removed **{row['product_name']}** (#{watch_id}).", parse_mode="Markdown")  # type: ignore[union-attr]
     else:
-        await update.message.reply_text("❌ Watch not found or doesn't belong to you.")  # type: ignore[union-attr]
+        await update.message.reply_text("[X] Watch not found or doesn't belong to you.")  # type: ignore[union-attr]
 
 
 async def cmd_setprice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /setprice <id> <price> — set target price for alerts."""
+    """Handle /setprice <id> <price> -- set target price for alerts."""
     if len(context.args) < 2:  # type: ignore[arg-type]
         await update.message.reply_text("Usage: /setprice <watch_id> <target_price>")  # type: ignore[union-attr]
         return
@@ -190,11 +190,11 @@ async def cmd_setprice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         watch_id = int(context.args[0])
         target_price = float(context.args[1])
     except ValueError:
-        await update.message.reply_text("❌ Both arguments must be numbers.")  # type: ignore[union-attr]
+        await update.message.reply_text("[X] Both arguments must be numbers.")  # type: ignore[union-attr]
         return
 
     if target_price <= 0:
-        await update.message.reply_text("❌ Target price must be greater than 0.")  # type: ignore[union-attr]
+        await update.message.reply_text("[X] Target price must be greater than 0.")  # type: ignore[union-attr]
         return
 
     user_id: int = update.effective_user.id  # type: ignore[union-attr]
@@ -203,79 +203,79 @@ async def cmd_setprice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     rows = list_watches(user_id)
     row = next((r for r in rows if r['id'] == watch_id), None)
     if not row:
-        await update.message.reply_text("❌ Watch not found or doesn't belong to you.")  # type: ignore[union-attr]
+        await update.message.reply_text("[X] Watch not found or doesn't belong to you.")  # type: ignore[union-attr]
         return
 
     if set_target_price(watch_id, user_id, target_price):
         await update.message.reply_text(  # type: ignore[union-attr]
-            f"🎯 Target price for **{row['product_name']}** set to ₹{target_price:.2f}\n"
+            f"[>] Target price for **{row['product_name']}** set to \u20b9{target_price:.2f}\n"
             f"I'll notify you when the price drops below this.",
             parse_mode="Markdown",
         )
     else:
-        await update.message.reply_text("❌ Failed to set target price.")  # type: ignore[union-attr]
+        await update.message.reply_text("[X] Failed to set target price.")  # type: ignore[union-attr]
 
 
 async def cmd_check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /check — run a price check on ALL products for this user."""
+    """Handle /check -- run a price check on ALL products for this user."""
     user_id: int = update.effective_user.id  # type: ignore[union-attr]
 
     rows = list_watches(user_id)
 
     if not rows:
-        await update.message.reply_text("📭 Nothing to check. Add products with /track first.")  # type: ignore[union-attr]
+        await update.message.reply_text("[!] Nothing to check. Add products with /track first.")  # type: ignore[union-attr]
         return
 
-    await update.message.reply_text("⏳ Checking prices…")  # type: ignore[union-attr]
+    await update.message.reply_text("[*] Checking prices...")  # type: ignore[union-attr]
 
     checker = PriceChecker()
     try:
         results = checker.check_all_watches()
     except Exception:
         logger.exception("Price check failed")
-        await update.message.reply_text("❌ Price check failed. Check logs for details.")  # type: ignore[union-attr]
+        await update.message.reply_text("[X] Price check failed. Check logs for details.")  # type: ignore[union-attr]
         return
 
     user_results = [r for r in results if r.user_id == user_id]
     if not user_results:
-        await update.message.reply_text("✅ Check complete. No results to report.")  # type: ignore[union-attr]
+        await update.message.reply_text("[OK] Check complete. No results to report.")  # type: ignore[union-attr]
         return
 
-    lines = ["📊 **Price Check Results**\n"]
+    lines = ["[#] **Price Check Results**\n"]
     for r in user_results:
-        arrow = "📉" if r.dropped else "➡️"
+        arrow = "[v]" if r.dropped else "[->]"
         lines.append(
             f"{arrow} **#{r.watch_id}** {r.product_name}\n"
-            f"   Current: ₹{r.current_price:.2f}  |  Previous: ₹{r.previous_price:.2f}\n"
+            f"   Current: \u20b9{r.current_price:.2f}  |  Previous: \u20b9{r.previous_price:.2f}\n"
         )
         if r.dropped:
-            lines.append(f"   🔔 Price dropped!\n")
+            lines.append(f"   [!] Price dropped!\n")
         if r.meets_target:
             lines.append(
-                f"   🎯 Below target price of ₹{r.target_price:.2f}!\n"
+                f"   [>] Below target price of \u20b9{r.target_price:.2f}!\n"
             )
 
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")  # type: ignore[union-attr]
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /help — show available commands."""
+    """Handle /help -- show available commands."""
     await update.message.reply_text(  # type: ignore[union-attr]
-        "🤖 **AIDE-OS Price Tracker — Commands**\n\n"
-        "/start — Welcome & overview\n"
-        "/track <url> — Track a product\n"
-        "/list — List tracked products\n"
-        "/setprice <id> <price> — Set alert target\n"
-        "/remove <id> — Remove a product\n"
-        "/check — Run price check now\n"
-        "/help — This message",
+        "[BOT] **AIDE-OS Price Tracker -- Commands**\n\n"
+        "/start -- Welcome & overview\n"
+        "/track <url> -- Track a product\n"
+        "/list -- List tracked products\n"
+        "/setprice <id> <price> -- Set alert target\n"
+        "/remove <id> -- Remove a product\n"
+        "/check -- Run price check now\n"
+        "/help -- This message",
         parse_mode="Markdown",
     )
 
 
 async def handle_unknown(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Catch any non-command messages and point the user to /help."""
-    await update.message.reply_text("🤔 I only understand commands. Try /help for options.")  # type: ignore[union-attr]
+    await update.message.reply_text("[?] I only understand commands. Try /help for options.")  # type: ignore[union-attr]
 
 
 # ---------------------------------------------------------------------------
@@ -328,7 +328,7 @@ def build_application() -> Application:
 
 
 def main() -> None:
-    """Entry point — start the bot with polling.
+    """Entry point -- start the bot with polling.
 
     Can be called from another module (``from telegram_bot import main``)
     or executed directly (``python telegram_bot.py``).
@@ -337,7 +337,7 @@ def main() -> None:
         format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
         level=logging.INFO,
     )
-    logger.info("Starting AIDE-OS Price-Drop Bot …")
+    logger.info("Starting AIDE-OS Price-Drop Bot ...")
 
     app = build_application()
     app.run_polling(drop_pending_updates=True)

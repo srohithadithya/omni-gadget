@@ -1,7 +1,24 @@
 import React, { useState } from 'react';
 import apiClient from '../api/client';
+import { useI18n } from '../i18n';
+import {
+  Zap, CheckCircle, AlertTriangle, XCircle,
+  Gauge, TrendingUp, CreditCard, Target,
+  Battery, HardDrive, Smartphone, Monitor,
+  Headphones, Film, MemoryStick, Watch,
+  ArrowRight, ChevronRight, Loader2,
+} from 'lucide-react';
 
 const CATEGORIES = ['mobile', 'laptop', 'audio', 'video', 'memory', 'wearable'];
+
+const CATEGORY_ICONS = {
+  mobile: Smartphone,
+  laptop: Monitor,
+  audio: Headphones,
+  video: Film,
+  memory: MemoryStick,
+  wearable: Watch,
+};
 
 const DEFAULTS = {
   mobile:   { age: 42, battery: 72, storage: 85, physical: 0.85, use: 'gaming', budget: 35000, price: 32000, baseline: 27000, tenure: 6, pfee: 299, forgone: 1500, discount: 2000 },
@@ -13,17 +30,18 @@ const DEFAULTS = {
 };
 
 function fmt(n) {
-  return '\u20b9' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+  return '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 }
 
 function verdictStyle(v) {
-  if (v === 'HOLD_CURRENT_DEVICE') return { cls: 'badge-green', icon: '\u2705', label: 'Hold Current Device' };
-  if (v === 'BUY_NOW') return { cls: 'badge-green', icon: '\u2705', label: 'Buy Now' };
-  if (v === 'BUY_WITH_BEST_OFFER') return { cls: 'badge-yellow', icon: '\u26a0\ufe0f', label: 'Buy With Best Offer' };
-  return { cls: 'badge-red', icon: '\U0001f534', label: v?.replace(/_/g, ' ') || v };
+  if (v === 'HOLD_CURRENT_DEVICE') return { cls: 'badge-green', Icon: CheckCircle, label: 'Hold Current Device' };
+  if (v === 'BUY_NOW') return { cls: 'badge-green', Icon: CheckCircle, label: 'Buy Now' };
+  if (v === 'BUY_WITH_BEST_OFFER') return { cls: 'badge-yellow', Icon: AlertTriangle, label: 'Buy With Best Offer' };
+  return { cls: 'badge-red', Icon: XCircle, label: v?.replace(/_/g, ' ') || v };
 }
 
 export default function FullDecisionPage() {
+  const { t } = useI18n();
   const [form, setForm] = useState({ ...DEFAULTS.mobile, category: 'mobile' });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -71,55 +89,55 @@ export default function FullDecisionPage() {
   return (
     <div>
       <div className="page-header">
-        <h1>\u26a1 Full Decision</h1>
-        <p>Master Endpoint \u2014 URL Assessment \u2192 Chipflation DI \u2192 Recommendations \u2192 EMI Audit</p>
+        <h1><Zap size={22} style={{ marginRight: 6, verticalAlign: 'middle' }} /> {t('DECISION.dec_title')}</h1>
+        <p>{t('DECISION.dec_subtitle')}</p>
       </div>
 
       <div className="card-grid">
         {/* Input */}
         <div>
           <div className="card">
-            <div className="card-title">Your Situation</div>
+            <div className="card-title"><Gauge size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />{t('DECISION.dec_your_situation')}</div>
 
             <div className="field">
-              <label>Device Category</label>
+              <label>{t('DECISION.dec_current_device')}</label>
               <select value={form.category} onChange={e => onCategoryChange(e.target.value)}>
                 {CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
               </select>
             </div>
 
-            <div className="section-divider">Current Device</div>
+            <div className="section-divider"><HardDrive size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />{t('DECISION.dec_current_device')}</div>
             <div className="card-grid">
               <div className="field">
                 <label>Age (months)</label>
                 <input type="number" min={0} value={form.age} onChange={e => setField('age', +e.target.value)} />
               </div>
               <div className="field">
-                <label>Battery Health %</label>
+                <label><Battery size={13} style={{ marginRight: 3, verticalAlign: 'middle' }} />Battery Health %</label>
                 <input type="number" min={0} max={100} value={form.battery} onChange={e => setField('battery', +e.target.value)} />
               </div>
               <div className="field">
-                <label>Storage Health %</label>
+                <label><HardDrive size={13} style={{ marginRight: 3, verticalAlign: 'middle' }} />Storage Health %</label>
                 <input type="number" min={0} max={100} value={form.storage} onChange={e => setField('storage', +e.target.value)} />
               </div>
               <div className="field">
-                <label>Physical (0\u20131)</label>
+                <label>Physical (0-1)</label>
                 <input type="number" min={0} max={1} step={0.05} value={form.physical} onChange={e => setField('physical', +e.target.value)} />
               </div>
             </div>
 
-            <div className="section-divider">Target Purchase</div>
+            <div className="section-divider"><Target size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />{t('DECISION.dec_target')}</div>
             <div className="card-grid">
               <div className="field">
-                <label>Price (\u20b9)</label>
+                <label>Price (₹)</label>
                 <input type="number" min={0} value={form.price} onChange={e => setField('price', +e.target.value)} />
               </div>
               <div className="field">
-                <label>Historical Baseline (\u20b9)</label>
+                <label>Historical Baseline (₹)</label>
                 <input type="number" min={1} value={form.baseline} onChange={e => setField('baseline', +e.target.value)} />
               </div>
               <div className="field">
-                <label>Budget (\u20b9)</label>
+                <label>Budget (₹)</label>
                 <input type="number" min={0} value={form.budget} onChange={e => setField('budget', +e.target.value)} />
               </div>
               <div className="field">
@@ -132,30 +150,30 @@ export default function FullDecisionPage() {
               </div>
             </div>
 
-            <div className="section-divider">EMI Details</div>
+            <div className="section-divider"><CreditCard size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />{t('DECISION.dec_emi_details')}</div>
             <div className="card-grid">
               <div className="field">
                 <label>Tenure (months)</label>
                 <input type="number" min={1} max={60} value={form.tenure} onChange={e => setField('tenure', +e.target.value)} />
               </div>
               <div className="field">
-                <label>Processing Fee (\u20b9)</label>
+                <label>Processing Fee (₹)</label>
                 <input type="number" min={0} value={form.pfee} onChange={e => setField('pfee', +e.target.value)} />
               </div>
               <div className="field">
-                <label>Forgone Discount (\u20b9)</label>
+                <label>Forgone Discount (₹)</label>
                 <input type="number" min={0} value={form.forgone} onChange={e => setField('forgone', +e.target.value)} />
               </div>
               <div className="field">
-                <label>No-Cost Discount (\u20b9)</label>
+                <label>No-Cost Discount (₹)</label>
                 <input type="number" min={0} value={form.discount} onChange={e => setField('discount', +e.target.value)} />
               </div>
             </div>
 
-            {error && <div className="alert alert-red"><span className="alert-icon">\u26a0\ufe0f</span>{error}</div>}
+            {error && <div className="alert alert-red"><span className="alert-icon"><AlertTriangle size={16} /></span>{error}</div>}
             <button className="btn btn-primary" onClick={run} disabled={loading}
               style={{ width: '100%', justifyContent: 'center', marginTop: 4 }}>
-              {loading ? <><span className="btn-spinner" /> Running all engines\u2026</> : '\u26a1 Run Full Decision'}
+              {loading ? <><span className="btn-spinner" /> {t('DECISION.dec_running')}</> : <><Zap size={16} style={{ marginRight: 4 }} /> {t('DECISION.dec_run')}</>}
             </button>
           </div>
         </div>
@@ -166,7 +184,9 @@ export default function FullDecisionPage() {
             <>
               {/* Master Verdict */}
               <div className="card" style={{ textAlign: 'center', padding: '24px' }}>
-                <div style={{ fontSize: 48, marginBottom: 8 }}>{vd.icon}</div>
+                <div style={{ fontSize: 48, marginBottom: 8, display: 'flex', justifyContent: 'center' }}>
+                  {vd && <vd.Icon size={48} color={vd.cls === 'badge-green' ? 'var(--success)' : vd.cls === 'badge-yellow' ? 'var(--warning)' : 'var(--danger)'} />}
+                </div>
                 <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>{result.master_verdict?.replace(/_/g, ' ')}</div>
                 <span className={`badge ${vd.cls}`} style={{ fontSize: 13 }}>{vd.label}</span>
                 <div style={{ marginTop: 12, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 400, margin: '12px auto 0' }}>
@@ -175,12 +195,12 @@ export default function FullDecisionPage() {
               </div>
 
               {/* Module Scores */}
-              <div className="section-divider">Module Results</div>
+              <div className="section-divider"><Gauge size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />{t('DECISION.dec_module')}</div>
 
               {/* URL */}
               {dl && (
                 <div className="card">
-                  <div className="card-title">\ud83d\udd0b Device Longevity (URL)</div>
+                  <div className="card-title"><Battery size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />{t('DECISION.dec_score')} — URL</div>
                   <div className="card-grid">
                     <div className="stat-box">
                       <div className="stat-label">URL Score</div>
@@ -200,7 +220,7 @@ export default function FullDecisionPage() {
               {/* DI */}
               {ma && (
                 <div className="card">
-                  <div className="card-title">\ud83d\udcc8 Market Analysis (DI)</div>
+                  <div className="card-title"><TrendingUp size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />Market Analysis (DI)</div>
                   <div className="card-grid">
                     <div className="stat-box">
                       <div className="stat-label">Decision Index</div>
@@ -218,7 +238,7 @@ export default function FullDecisionPage() {
                   <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-muted)' }}>
                     Price vs baseline: <strong style={{ color: ma.price_vs_baseline_pct > 0 ? 'var(--danger)' : 'var(--success)' }}>
                       {ma.price_vs_baseline_pct > 0 ? '+' : ''}{ma.price_vs_baseline_pct}%
-                    </strong> \u00b7 CI: {ma.chipflation_index}\u00d7
+                    </strong> · CI: {ma.chipflation_index}×
                   </div>
                   <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)' }}>{ma.seasonal_hint}</div>
                 </div>
@@ -227,7 +247,7 @@ export default function FullDecisionPage() {
               {/* EMI */}
               {emi && (
                 <div className="card">
-                  <div className="card-title">\ud83d\udcb3 EMI Audit</div>
+                  <div className="card-title"><CreditCard size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />{t('DECISION.dec_emi_details')}</div>
                   <div className="card-grid">
                     <div className="stat-box">
                       <div className="stat-label">Hidden Charges</div>
@@ -245,13 +265,13 @@ export default function FullDecisionPage() {
               {/* Recommendations */}
               {result.recommendations && (
                 <div className="card">
-                  <div className="card-title">\ud83c\udfaf Recommendations</div>
+                  <div className="card-title"><Target size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />{t('DECISION.dec_verdict')}</div>
                   {result.recommendations.primary?.map((m, i) => (
                     <div key={i} className="product-card" style={{ marginBottom: 8 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <div>
                           <div style={{ fontWeight: 700 }}>{m.product.brand} {m.product.model_name || m.product.model}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{m.product.tier} \u00b7 Match: {m.match_score}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{m.product.tier} · Match: {m.match_score}</div>
                         </div>
                         <div style={{ fontWeight: 800, color: 'var(--primary-light)' }}>{fmt(m.product.price_inr)}</div>
                       </div>
@@ -262,7 +282,7 @@ export default function FullDecisionPage() {
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <div>
                           <div style={{ fontWeight: 700 }}>{m.product.brand} {m.product.model_name || m.product.model}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{m.product.tier} \u00b7 Match: {m.match_score}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{m.product.tier} · Match: {m.match_score}</div>
                         </div>
                         <div style={{ fontWeight: 800, color: 'var(--primary-light)' }}>{fmt(m.product.price_inr)}</div>
                       </div>
@@ -273,7 +293,7 @@ export default function FullDecisionPage() {
             </>
           ) : (
             <div className="card" style={{ minHeight: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12, color: 'var(--text-muted)' }}>
-              <div style={{ fontSize: 48 }}>\u26a1</div>
+              <div style={{ fontSize: 48 }}><Zap size={48} strokeWidth={1.5} /></div>
               <div style={{ fontWeight: 600 }}>Set your situation and run all 4 engines</div>
               <div style={{ fontSize: 12 }}>One click gives you the complete picture</div>
             </div>

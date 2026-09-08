@@ -1,239 +1,315 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useI18n } from '../i18n';
 import apiClient from '../api/client';
+import { Cpu, Scan, Settings, Battery, HardDrive, Smartphone, AlertTriangle, CheckCircle } from 'lucide-react';
 
-const CATEGORIES = ['mobile', 'laptop', 'audio', 'video', 'memory', 'wearable'];
+const USAGES = ['gaming', 'daily_tasks', 'multitasking', 'photography', 'coding', 'data_science', 'video_editing', 'productivity', 'music', 'remote_work'];
 
-const CATEGORY_DEFAULTS = {
-  mobile:   { battery: 72, storage: 85, physical: 0.85, age: 42, eol: 60, lifespan: 5 },
-  laptop:   { battery: 55, storage: 70, physical: 0.70, age: 60, eol: 72, lifespan: 6 },
-  audio:    { battery: 80, storage: 95, physical: 0.90, age: 24, eol: 60, lifespan: 5 },
-  video:    { battery: 99, storage: 99, physical: 0.80, age: 72, eol: 96, lifespan: 8 },
-  memory:   { battery: 99, storage: 82, physical: 0.95, age: 36, eol: 84, lifespan: 7 },
-  wearable: { battery: 65, storage: 90, physical: 0.75, age: 36, eol: 48, lifespan: 4 },
-};
+// Auto-detect device from browser navigator
+function autoDetectDevice() {
+  const ua = navigator.userAgent || '';
+  const platform = navigator.platform || '';
 
-function barColor(pct) {
-  if (pct >= 70) return '#22c55e';
-  if (pct >= 40) return '#eab308';
-  return '#ef4444';
-}
+  let brand = 'Unknown', model = 'Unknown', category = 'mobile';
+  let os = 'Unknown', osVersion = '', screenSize = '';
 
-function verdictBadge(decision) {
-  if (decision === 'HOLD_CURRENT_DEVICE')    return { cls: 'badge-green',  icon: '✅', label: 'Hold Current Device' };
-  if (decision === 'CONSIDER_REPLACEMENT')   return { cls: 'badge-yellow', icon: '⚠️', label: 'Consider Replacement' };
-  return                                            { cls: 'badge-red',    icon: '🔴', label: 'Replace Immediately' };
+  // Detect OS
+  if (/Windows/i.test(ua)) { os = 'Windows'; osVersion = ua.match(/Windows NT (\d+\.\d+)/)?.[1] || ''; }
+  else if (/Mac/i.test(ua)) { os = 'macOS'; category = 'laptop'; }
+  else if (/Linux/i.test(ua)) { os = 'Linux'; category = 'laptop'; }
+  else if (/Android/i.test(ua)) {
+    os = 'Android';
+    osVersion = ua.match(/Android (\d+[\.\d]*)/)?.[1] || '';
+    const m = ua.match(/;\s*([^;)]+)\s*Build/);
+    brand = m?.[1]?.trim() || 'Android Device';
+  }
+  else if (/iPhone|iPad/i.test(ua)) {
+    os = 'iOS';
+    if (/iPad/i.test(ua)) { category = 'tablet'; brand = 'Apple'; model = 'iPad'; }
+    else { brand = 'Apple'; model = 'iPhone'; }
+    osVersion = ua.match(/OS (\d+_\d+)/)?.[1]?.replace('_', '.') || '';
+  }
+
+  // Detect brand from UA
+  if (/Samsung/i.test(ua)) brand = 'Samsung';
+  else if (/Pixel/i.test(ua)) { brand = 'Google'; model = 'Pixel'; }
+  else if (/OnePlus/i.test(ua)) brand = 'OnePlus';
+  else if (/Xiaomi|Redmi|POCO/i.test(ua)) { brand = 'Xiaomi'; model = ua.match(/(Xiaomi|Redmi|POCO)\s*\w*/)?.[0] || 'Xiaomi'; }
+  else if (/Realme/i.test(ua)) brand = 'Realme';
+  else if (/Vivo/i.test(ua)) brand = 'Vivo';
+  else if (/Oppo/i.test(ua)) brand = 'Oppo';
+  else if (/Motorola|Moto/i.test(ua)) brand = 'Motorola';
+  else if (/MacBook/i.test(ua)) { brand = 'Apple'; model = 'MacBook'; category = 'laptop'; }
+  else if (/Dell/i.test(ua)) { brand = 'Dell'; category = 'laptop'; }
+  else if (/HP|Hewlett/i.test(ua)) { brand = 'HP'; category = 'laptop'; }
+  else if (/Lenovo/i.test(ua)) { brand = 'Lenovo'; category = 'laptop'; }
+  else if (/ASUS|Asus/i.test(ua)) { brand = 'ASUS'; category = 'laptop'; }
+  else if (/Acer/i.test(ua)) { brand = 'Acer'; category = 'laptop'; }
+
+  // Screen info
+  screenSize = `${screen.width}x${screen.height}`;
+
+  // Connection info
+  const connection = navigator.connection;
+  const networkType = connection?.effectiveType || 'unknown';
+
+  return {
+    brand,
+    model,
+    category,
+    os,
+    osVersion,
+    screenSize,
+    networkType,
+    touchSupport: 'ontouchstart' in window,
+    deviceMemory: navigator.deviceMemory || null,
+    hardwareConcurrency: navigator.hardwareConcurrency || null,
+    userAgent: ua,
+  };
 }
 
 export default function DiagnosePage() {
+  const { t } = useI18n();
   const [form, setForm] = useState({
-    category: 'mobile',
-    age_months: 42,
-    battery_health_pct: 72,
-    storage_health_pct: 85,
-    physical_condition: 0.85,
-    eol_months: 60,
-    max_lifespan_years: 5,
+    battery: 75, storage: 80, physical: 0.85, age: 36, usage: 'daily_tasks',
+    brand: '', model: '', category: 'mobile',
   });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [autoDetected, setAutoDetected] = useState(null);
+  const [isAutoMode, setIsAutoMode] = useState(false);
 
-  function setField(key, val) {
-    setForm(f => ({ ...f, [key]: val }));
-  }
+  // Run auto-detect on mount
+  useEffect(() => {
+    const detected = autoDetectDevice();
+    setAutoDetected(detected);
+  }, []);
 
-  function onCategoryChange(cat) {
-    const d = CATEGORY_DEFAULTS[cat];
-    setForm({
-      category: cat,
-      age_months: d.age,
-      battery_health_pct: d.battery,
-      storage_health_pct: d.storage,
-      physical_condition: d.physical,
-      eol_months: d.eol,
-      max_lifespan_years: d.lifespan,
-    });
-    setResult(null);
-  }
+  const useAutoDetect = useCallback(() => {
+    if (!autoDetected) return;
+    setIsAutoMode(true);
+    setForm(f => ({
+      ...f,
+      brand: autoDetected.brand,
+      model: autoDetected.model,
+      category: autoDetected.category,
+    }));
+  }, [autoDetected]);
 
-  async function run() {
-    setLoading(true); setError(null);
+  const setField = useCallback((k, v) => setForm(f => ({ ...f, [k]: v })), []);
+
+  const runDiagnosis = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const { data } = await apiClient.deviceLongevity(form);
+      const { data } = await apiClient.diagnose({
+        category: form.category,
+        age_months: form.age,
+        battery_health_pct: form.battery,
+        storage_health_pct: form.storage,
+        physical_condition: form.physical,
+        usage_type: form.usage,
+      });
       setResult(data);
     } catch (e) {
       setError(e.response?.data?.detail || e.message);
     } finally {
       setLoading(false);
     }
-  }
+  }, [form]);
 
-  const vb = result ? verdictBadge(result.decision) : null;
+  const healthColor = (score) => {
+    if (score >= 80) return 'var(--success)';
+    if (score >= 50) return 'var(--warning)';
+    return 'var(--error)';
+  };
 
   return (
     <div>
-      <div className="page-header">
-        <h1>🔋 Device Diagnosis</h1>
-        <p>Module 6 — Useful Remaining Life (URL) Calculator</p>
+      <div className="page-header animate-fade-in">
+        <h1>{t('DIAGNOSE.diag_title')}</h1>
+        <p>{t('DIAGNOSE.diag_subtitle')}</p>
       </div>
 
-      <div className="card-grid">
-        {/* Left: Input form */}
-        <div>
-          <div className="card">
-            <div className="card-title">Device Telemetry Input</div>
+      {/* Auto-detect banner */}
+      {autoDetected && !isAutoMode && (
+        <div className="auto-detect-banner animate-fade-in">
+          <div className="detect-icon"><Scan size={18} /></div>
+          <div className="detect-text" style={{ flex: 1 }}>
+            <strong>{t('COMMON.auto_detected')}:</strong> {autoDetected.brand} {autoDetected.model} ({autoDetected.os} {autoDetected.osVersion})
+            {autoDetected.screenSize && <span style={{ marginLeft: 8, opacity: 0.6 }}>{autoDetected.screenSize}</span>}
+            {autoDetected.hardwareConcurrency && <span style={{ marginLeft: 8, opacity: 0.6 }}>{autoDetected.hardwareConcurrency} cores</span>}
+          </div>
+          <button className="btn btn-primary" onClick={useAutoDetect} style={{ fontSize: '0.78rem', padding: '8px 16px' }}>
+            {t('DIAGNOSE.diag_auto')}
+          </button>
+        </div>
+      )}
 
-            {/* Category selector */}
-            <div className="field">
-              <label>Device Category</label>
-              <select value={form.category} onChange={e => onCategoryChange(e.target.value)}>
-                {CATEGORIES.map(c => (
-                  <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="card-grid">
-              <div className="field">
-                <label>Device Age (months)</label>
-                <input type="number" min={0} max={240}
-                  value={form.age_months}
-                  onChange={e => setField('age_months', +e.target.value)} />
-              </div>
-              <div className="field">
-                <label>OS/EOL Limit (months)</label>
-                <input type="number" min={12} max={120}
-                  value={form.eol_months}
-                  onChange={e => setField('eol_months', +e.target.value)} />
-              </div>
-              <div className="field">
-                <label>Max Lifespan (years)</label>
-                <input type="number" min={1} max={15} step={0.5}
-                  value={form.max_lifespan_years}
-                  onChange={e => setField('max_lifespan_years', +e.target.value)} />
-              </div>
-            </div>
-
-            {/* Sliders */}
-            {[
-              { key: 'battery_health_pct',  label: 'Battery Health',        max: 100, unit: '%',   display: v => `${v}%` },
-              { key: 'storage_health_pct',  label: 'Storage Health (TBW)',   max: 100, unit: '%',   display: v => `${v}%` },
-              { key: 'physical_condition',  label: 'Physical Condition',     max: 1,   unit: '',    display: v => `${(v * 100).toFixed(0)}%`, step: 0.01 },
-            ].map(s => (
-              <div className="field" key={s.key}>
-                <label>{s.label}</label>
-                <div className="slider-wrap">
-                  <input
-                    type="range" min={0} max={s.max} step={s.step || 1}
-                    value={form[s.key]}
-                    onChange={e => setField(s.key, +e.target.value)}
-                  />
-                  <span className="slider-val">{s.display(form[s.key])}</span>
-                </div>
-              </div>
-            ))}
-
-            {error && <div className="alert alert-red"><span className="alert-icon">⚠️</span>{error}</div>}
-
-            <button className="btn btn-primary" onClick={run} disabled={loading} style={{ width: '100%', justifyContent: 'center', marginTop: 4 }}>
-              {loading ? <><span className="btn-spinner" /> Calculating…</> : '⚡ Calculate URL Score'}
+      {/* Auto-detected info */}
+      {isAutoMode && autoDetected && (
+        <div className="card animate-scale-in" style={{ marginBottom: 'var(--spacing-4)', padding: 'var(--spacing-4)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <CheckCircle size={16} color="var(--success)" />
+            <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{t('COMMON.auto_detected')}</span>
+            <button
+              onClick={() => setIsAutoMode(false)}
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.78rem', fontFamily: 'inherit' }}
+            >
+              {t('COMMON.switch_to_manual')}
             </button>
           </div>
-
-          {/* Formula reference */}
-          <div className="card">
-            <div className="card-title">URL Score Formula</div>
-            <div style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-muted)', lineHeight: 2 }}>
-              URL = (0.35 × BH + 0.25 × SH + 0.25 × AgeFactor + 0.15 × Phys) × 100<br />
-              <br />
-              BH = Battery Health / 100<br />
-              SH = Storage Health / 100<br />
-              AgeFactor = 1 − (Age / EOL)<br />
-              Phys = Physical Condition (0–1)
-            </div>
-            <div className="alert alert-blue" style={{ marginTop: 12 }}>
-              <span className="alert-icon">ℹ️</span>
-              <div>Score ≥ 60% → <strong>Hold device</strong>. Score &lt; 60% → plan replacement.</div>
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
+            <div><span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>{t('DIAGNOSE.diag_brand')}</span><br/><strong>{autoDetected.brand}</strong></div>
+            <div><span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>{t('DIAGNOSE.diag_model')}</span><br/><strong>{autoDetected.model || 'N/A'}</strong></div>
+            <div><span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>OS</span><br/><strong>{autoDetected.os} {autoDetected.osVersion}</strong></div>
+            {autoDetected.deviceMemory && <div><span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>RAM</span><br/><strong>{autoDetected.deviceMemory} GB</strong></div>}
           </div>
         </div>
+      )}
 
-        {/* Right: Results */}
+      <div className="card-grid">
+        {/* Input Form */}
+        <div className="card animate-fade-in-up stagger-1" style={{ padding: 'var(--spacing-6)' }}>
+          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Settings size={18} color="var(--primary)" />
+            {t('DIAGNOSE.diag_manual')}
+          </div>
+
+          <div className="card-grid" style={{ marginBottom: 0 }}>
+            <div className="field">
+              <label>{t('DIAGNOSE.diag_brand')}</label>
+              <input type="text" value={form.brand} onChange={e => setField('brand', e.target.value)} placeholder="e.g. Samsung, Apple" />
+            </div>
+            <div className="field">
+              <label>{t('DIAGNOSE.diag_model')}</label>
+              <input type="text" value={form.model} onChange={e => setField('model', e.target.value)} placeholder="e.g. Galaxy S24" />
+            </div>
+          </div>
+
+          <div className="field">
+            <label>{t('DIAGNOSE.diag_usage')}</label>
+            <select value={form.usage} onChange={e => setField('usage', e.target.value)}>
+              {USAGES.map(u => <option key={u} value={u}>{u.replace(/_/g, ' ')}</option>)}
+            </select>
+          </div>
+
+          <div className="field">
+            <label className="tooltip-wrap">
+              {t('DIAGNOSE.diag_age')}
+              <span className="tooltip-text">How many months you've owned this device</span>
+            </label>
+            <input type="number" min={0} max={240} value={form.age} onChange={e => setField('age', +e.target.value)} />
+          </div>
+
+          <div className="field">
+            <label className="tooltip-wrap">
+              {t('DIAGNOSE.diag_battery')}
+              <span className="tooltip-text">Check in Settings &gt; Battery or use a battery health app</span>
+            </label>
+            <div className="slider-wrap">
+              <input type="range" min={0} max={100} value={form.battery} onChange={e => setField('battery', +e.target.value)} />
+              <span className="slider-val" style={{ color: healthColor(form.battery) }}>{form.battery}%</span>
+            </div>
+          </div>
+
+          <div className="field">
+            <label className="tooltip-wrap">
+              {t('DIAGNOSE.diag_storage')}
+              <span className="tooltip-text">Available storage as percentage of total</span>
+            </label>
+            <div className="slider-wrap">
+              <input type="range" min={0} max={100} value={form.storage} onChange={e => setField('storage', +e.target.value)} />
+              <span className="slider-val" style={{ color: healthColor(form.storage) }}>{form.storage}%</span>
+            </div>
+          </div>
+
+          <div className="field">
+            <label className="tooltip-wrap">
+              {t('DIAGNOSE.diag_physical')}
+              <span className="tooltip-text">1.0 = brand new, 0.0 = heavily damaged. 0.85 = minor scratches</span>
+            </label>
+            <div className="slider-wrap">
+              <input type="range" min={0} max={1} step={0.05} value={form.physical} onChange={e => setField('physical', +e.target.value)} />
+              <span className="slider-val">{form.physical}</span>
+            </div>
+          </div>
+
+          {error && (
+            <div className="alert alert-red animate-bounce-in">
+              <AlertTriangle size={16} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <button className="btn btn-primary" onClick={runDiagnosis} disabled={loading}
+            style={{ width: '100%', justifyContent: 'center' }}>
+            {loading ? <><span className="btn-spinner" /> {t('COMMON.loading')}</> : (
+              <><Cpu size={16} /> {t('DIAGNOSE.diag_run')}</>
+            )}
+          </button>
+        </div>
+
+        {/* Results */}
         <div>
           {result ? (
-            <>
-              <div className="card">
-                <div className="card-title">Diagnosis Result</div>
-                <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
-                  <div className="stat-box" style={{ flex: 1, minWidth: 120 }}>
-                    <div className="stat-label">URL Score</div>
-                    <div className="stat-value" style={{ color: barColor(result.url_score_pct) }}>
-                      {result.url_score_pct}%
+            <div className="result-appear">
+              {/* Health Score Big Number */}
+              <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-8)' }}>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                  {t('DIAGNOSE.diag_score')}
+                </div>
+                <div style={{
+                  fontSize: 64, fontWeight: 800, lineHeight: 1,
+                  color: healthColor(result.url_score_pct),
+                }}>
+                  {result.url_score_pct}%
+                </div>
+                <div style={{ marginTop: 12 }}>
+                  <span className={`badge ${result.url_score_pct >= 70 ? 'badge-green' : result.url_score_pct >= 40 ? 'badge-yellow' : 'badge-red'}`}>
+                    {t(`DIAGNOSE.diag_${result.url_score_pct >= 70 ? 'excellent' : result.url_score_pct >= 50 ? 'good' : result.url_score_pct >= 30 ? 'fair' : 'poor'}`)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Years left + advice */}
+              <div className="card animate-fade-in-up stagger-2" style={{ marginTop: 'var(--spacing-4)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)' }}>
+                  <div className="stat-box">
+                    <div className="stat-label">{t('DIAGNOSE.diag_years_left')}</div>
+                    <div className="stat-value" style={{ color: 'var(--primary)' }}>{result.estimated_years_left} yr</div>
+                  </div>
+                  <div className="stat-box">
+                    <div className="stat-label">{t('DIAGNOSE.diag_status')}</div>
+                    <div className="stat-value" style={{
+                      fontSize: 16,
+                      color: result.url_score_pct >= 70 ? 'var(--success)' : result.url_score_pct >= 40 ? 'var(--warning)' : 'var(--error)',
+                    }}>
+                      {result.url_score_pct >= 70 ? t('DIAGNOSE.diag_excellent') : result.url_score_pct >= 50 ? t('DIAGNOSE.diag_good') : t('DIAGNOSE.diag_fair')}
                     </div>
-                    <div className="stat-sub">threshold: 60%</div>
                   </div>
-                  <div className="stat-box" style={{ flex: 1, minWidth: 120 }}>
-                    <div className="stat-label">Years Remaining</div>
-                    <div className="stat-value">{result.estimated_years_left}</div>
-                    <div className="stat-sub">est. useful life</div>
-                  </div>
-                </div>
-
-                <span className={`badge ${vb.cls}`} style={{ marginBottom: 16, display: 'inline-flex' }}>
-                  {vb.icon} {vb.label}
-                </span>
-
-                {/* Component breakdown */}
-                <div style={{ marginTop: 8 }}>
-                  {[
-                    ['Battery Health (w=0.35)',      result.component_scores.battery_pct],
-                    ['Storage Health (w=0.25)',       result.component_scores.storage_pct],
-                    ['Age Factor (w=0.25)',           result.component_scores.age_factor_pct],
-                    ['Physical Condition (w=0.15)',   result.component_scores.physical_pct],
-                  ].map(([label, val]) => (
-                    <div className="progress-row" key={label}>
-                      <span className="progress-label">{label}</span>
-                      <div className="progress-track">
-                        <div className="progress-fill"
-                          style={{ width: `${val}%`, background: barColor(val) }} />
-                      </div>
-                      <span className="progress-pct" style={{ color: barColor(val) }}>{val}%</span>
-                    </div>
-                  ))}
                 </div>
               </div>
 
-              <div className={`alert ${result.decision === 'HOLD_CURRENT_DEVICE' ? 'alert-green' : result.decision === 'CONSIDER_REPLACEMENT' ? 'alert-yellow' : 'alert-red'}`}>
-                <span className="alert-icon">{vb.icon}</span>
-                <div>
-                  <strong>Maintenance Recommendation</strong><br />
-                  {result.maintenance_advice}
+              {/* Advice */}
+              {result.maintenance_advice && (
+                <div className="card animate-fade-in-up stagger-3" style={{ marginTop: 'var(--spacing-4)' }}>
+                  <div className="card-title">{t('DIAGNOSE.diag_advice')}</div>
+                  <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.7 }}>
+                    {result.maintenance_advice}
+                  </div>
                 </div>
-              </div>
-
-              {/* Next step prompt */}
-              <div className="card" style={{ marginTop: 4 }}>
-                <div className="card-title">What Next?</div>
-                {result.decision !== 'HOLD_CURRENT_DEVICE' ? (
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.7 }}>
-                    Your device needs replacement. Head to{' '}
-                    <a href="/recommend">Find Gadgets</a> to get matched recommendations,
-                    then check <a href="/emi-audit">EMI Audit</a> before financing.
-                  </div>
-                ) : (
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.7 }}>
-                    Your device is still viable. Check the{' '}
-                    <a href="/chipflation">Chipflation Index</a> to see if current
-                    market conditions are worth upgrading anyway.
-                  </div>
-                )}
-              </div>
-            </>
+              )}
+            </div>
           ) : (
-            <div className="card" style={{ minHeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12, color: 'var(--text-muted)' }}>
-              <div style={{ fontSize: 48 }}>🔋</div>
-              <div style={{ fontWeight: 600 }}>Enter device telemetry and run the diagnosis</div>
-              <div style={{ fontSize: 12 }}>Results will appear here</div>
+            <div className="card" style={{
+              minHeight: 400, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexDirection: 'column', gap: 12, color: 'var(--text-muted)',
+            }}>
+              <Smartphone size={48} strokeWidth={1} />
+              <div style={{ fontWeight: 600 }}>{t('DIAGNOSE.diag_subtitle')}</div>
+              <div style={{ fontSize: '0.82rem' }}>{t('DIAGNOSE.diag_auto')}</div>
             </div>
           )}
         </div>

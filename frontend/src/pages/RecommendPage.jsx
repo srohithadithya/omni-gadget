@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
 import apiClient from '../api/client';
+import { useI18n } from '../i18n';
+import {
+  Target, Zap, AlertTriangle, Smartphone, Monitor, Headphones,
+  Film, MemoryStick, Watch, Package, MonitorPlay, HardDrive,
+  ShoppingCart, Store, Banknote, RefreshCw, CheckCircle, ExternalLink,
+} from 'lucide-react';
 
 const CATEGORIES = ['mobile', 'laptop', 'audio', 'video', 'memory', 'wearable'];
 
@@ -22,7 +28,7 @@ const BUDGET_PRESETS = {
 };
 
 function fmt(n) {
-  return '₹' + Number(n).toLocaleString('en-IN');
+  return '\u20b9' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 }
 
 function riskBadge(risk) {
@@ -37,9 +43,9 @@ function riskBadge(risk) {
 
 function valueBadge(vv) {
   const map = {
-    GREAT_VALUE: { cls: 'badge-green',  label: '🏷 Great Value' },
-    FAIR:        { cls: 'badge-blue',   label: '✔ Fair Price' },
-    OVERPRICED:  { cls: 'badge-red',    label: '⚠ Overpriced' },
+    GREAT_VALUE: { cls: 'badge-green',  label: 'Great Value' },
+    FAIR:        { cls: 'badge-blue',   label: 'Fair Price' },
+    OVERPRICED:  { cls: 'badge-red',    label: 'Overpriced' },
   };
   return map[vv] || { cls: 'badge-blue', label: vv };
 }
@@ -48,7 +54,7 @@ function Stars({ n }) {
   const full = Math.floor(n);
   return (
     <span className="stars">
-      {'★'.repeat(full)}{'☆'.repeat(5 - full)} {n}
+      {'\u2605'.repeat(full)}{'\u2606'.repeat(5 - full)} {n}
     </span>
   );
 }
@@ -63,25 +69,29 @@ function affiliateLinks(p) {
   };
 }
 
+const categoryIcons = {
+  mobile: Smartphone, laptop: Monitor, audio: Headphones,
+  video: Film, memory: MemoryStick, wearable: Watch,
+};
+
+const categoryColors = {
+  mobile: '#6366f1', laptop: '#22c55e', audio: '#eab308',
+  video: '#ef4444', memory: '#3b82f6', wearable: '#c084fc',
+};
+
 function ProductImage({ category, brand }) {
-  const icons = {
-    mobile: '📱', laptop: '💻', audio: '🎧', video: '📺', memory: '💾', wearable: '⌚',
-  };
-  const colors = {
-    mobile: '#6366f1', laptop: '#22c55e', audio: '#eab308', video: '#ef4444', memory: '#3b82f6', wearable: '#c084fc',
-  };
+  const IconComp = categoryIcons[category] || Package;
+  const color = categoryColors[category] || '#6366f1';
   return (
     <div style={{
       width: '100%', height: 100, borderRadius: 'var(--radius-sm)',
-      background: `linear-gradient(135deg, ${colors[category] || '#6366f1'}18, ${colors[category] || '#6366f1'}08)`,
-      border: `1px solid ${colors[category] || '#6366f1'}30`,
+      background: `linear-gradient(135deg, ${color}18, ${color}08)`,
+      border: `1px solid ${color}30`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 4, marginBottom: 10,
     }}>
-      <span style={{ fontSize: 32 }}>{icons[category] || '📦'}</span>
-      <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>
-        {brand}
-      </span>
+      <IconComp size={32} color={color} />
+      <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>{brand}</span>
     </div>
   );
 }
@@ -109,10 +119,10 @@ function ProductCard({ match, label }) {
       </div>
 
       <div className="product-tags">
-        <span className={`badge ${vb.cls}`} style={{ fontSize: 11 }}>{vb.label}</span>
-        <span className={`badge ${rb.cls}`} style={{ fontSize: 11 }}>{rb.label}</span>
+        <span className={`${vb.cls}`} style={{ fontSize: 11 }}>{vb.label}</span>
+        <span className={`${rb.cls}`} style={{ fontSize: 11 }}>{rb.label}</span>
         {isRefurb && (
-          <span className="badge badge-purple" style={{ fontSize: 11 }}>♻ Refurbished</span>
+          <span className="badge badge-purple" style={{ fontSize: 11 }}>Refurbished</span>
         )}
         {p.rating && <Stars n={p.rating} />}
         {p.review_count && (
@@ -123,10 +133,10 @@ function ProductCard({ match, label }) {
       </div>
 
       {p.display_spec && (
-        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>
-          📐 {p.display_spec}
-          {p.ram_gb ? `  •  💾 ${p.ram_gb}GB RAM` : ''}
-          {p.storage_gb ? `  •  💿 ${p.storage_gb}GB Storage` : ''}
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <MonitorPlay size={14} /> {p.display_spec}
+          {p.ram_gb ? <><span style={{ margin: '0 2px' }}>-</span><MemoryStick size={14} /> {p.ram_gb}GB RAM</> : ''}
+          {p.storage_gb ? <><span style={{ margin: '0 2px' }}>-</span><HardDrive size={14} /> {p.storage_gb}GB Storage</> : ''}
         </div>
       )}
 
@@ -134,18 +144,18 @@ function ProductCard({ match, label }) {
       {(() => {
         const links = affiliateLinks(p);
         return (
-          <div style={{ display: 'flex', gap: 8, marginTop: 10, marginBottom: 6 }}>
+          <div style={{ display: 'flex', gap: 8, marginTop: 10, marginBottom: 6, flexWrap: 'wrap' }}>
             <a href={links.amazon} target="_blank" rel="noopener noreferrer"
-               className="btn btn-primary" style={{ fontSize: 11, padding: '6px 14px', textDecoration: 'none' }}>
-              🛒 Buy on Amazon
+               className="btn btn-primary" style={{ fontSize: 11, padding: '6px 14px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <ShoppingCart size={12} /> Buy on Amazon
             </a>
             <a href={links.flipkart} target="_blank" rel="noopener noreferrer"
-               className="btn btn-outline" style={{ fontSize: 11, padding: '6px 14px', textDecoration: 'none' }}>
-              🛍 Flipkart
+               className="btn btn-outline" style={{ fontSize: 11, padding: '6px 14px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <Store size={12} /> Flipkart
             </a>
             <a href={links.earnkaro} target="_blank" rel="noopener noreferrer"
-               className="btn btn-outline" style={{ fontSize: 11, padding: '6px 14px', textDecoration: 'none' }}>
-              💰 EarnKaro
+               className="btn btn-outline" style={{ fontSize: 11, padding: '6px 14px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <Banknote size={12} /> EarnKaro
             </a>
           </div>
         );
@@ -163,8 +173,8 @@ function ProductCard({ match, label }) {
       )}
 
       {isRefurb && p.refurb_source && (
-        <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-muted)' }}>
-          🛒 Available at: <strong style={{ color: 'var(--primary-light)' }}>{p.refurb_source || p.source}</strong>
+        <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <ExternalLink size={12} /> Available at: <strong style={{ color: 'var(--primary)' }}>{p.refurb_source || p.source}</strong>
         </div>
       )}
     </div>
@@ -172,6 +182,7 @@ function ProductCard({ match, label }) {
 }
 
 export default function RecommendPage() {
+  const { t } = useI18n();
   const [form, setForm] = useState({
     category: 'mobile',
     use_case: 'gaming',
@@ -218,37 +229,45 @@ export default function RecommendPage() {
 
   return (
     <div>
-      <div className="page-header">
-        <h1>🎯 Find Best Gadget</h1>
-        <p>Modules 3 & 4 — Requirement-Based Recommender & Alternative Matcher</p>
+      <div className="page-header animate-fade-in">
+        <h1>{t('RECOMMEND.rec_title')}</h1>
+        <p>{t('RECOMMEND.rec_subtitle')}</p>
       </div>
 
       <div className="card-grid">
         {/* Input */}
         <div>
-          <div className="card">
-            <div className="card-title">Your Requirements</div>
+          <div className="card animate-fade-in-up stagger-1" style={{ padding: 'var(--spacing-6)' }}>
+            <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Target size={18} color="var(--primary)" />
+              {t('RECOMMEND.rec_find')}
+            </div>
 
-            <div className="field">
-              <label>Device Category</label>
-              <select value={form.category} onChange={e => onCategoryChange(e.target.value)}>
-                {CATEGORIES.map(c => (
-                  <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
-                ))}
-              </select>
+            <div className="card-grid" style={{ marginBottom: 0 }}>
+              <div className="field">
+                <label>{t('RECOMMEND.rec_category')}</label>
+                <select value={form.category} onChange={e => onCategoryChange(e.target.value)}>
+                  {CATEGORIES.map(c => (
+                    <option key={c} value={c}>
+                      {c.charAt(0).toUpperCase() + c.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label>{t('RECOMMEND.rec_use_case')}</label>
+                <select value={form.use_case} onChange={e => setField('use_case', e.target.value)}>
+                  {(USE_CASES[form.category] || []).map(u => (
+                    <option key={u} value={u}>
+                      {u.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="field">
-              <label>Primary Use Case</label>
-              <select value={form.use_case} onChange={e => setField('use_case', e.target.value)}>
-                {(USE_CASES[form.category] || []).map(u => (
-                  <option key={u} value={u}>{u.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="field">
-              <label>Max Budget</label>
+              <label>{t('RECOMMEND.rec_budget')}</label>
               <div className="slider-wrap">
                 <input
                   type="range"
@@ -260,15 +279,15 @@ export default function RecommendPage() {
                 />
                 <span className="slider-val">{fmt(form.max_budget_inr)}</span>
               </div>
-              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+              <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
                 {BUDGET_PRESETS[form.category].map(b => (
                   <button key={b}
-                    className={`btn btn-outline`}
+                    className="btn btn-outline"
                     style={{
                       padding: '4px 10px', fontSize: 11,
-                      background: form.max_budget_inr === b ? 'rgba(99,102,241,.15)' : '',
+                      background: form.max_budget_inr === b ? 'rgba(217,119,6,.15)' : '',
                       borderColor: form.max_budget_inr === b ? 'var(--primary)' : '',
-                      color: form.max_budget_inr === b ? 'var(--primary-light)' : '',
+                      color: form.max_budget_inr === b ? 'var(--primary)' : '',
                     }}
                     onClick={() => setField('max_budget_inr', b)}
                   >
@@ -281,13 +300,13 @@ export default function RecommendPage() {
             {['mobile', 'laptop'].includes(form.category) && (
               <div className="card-grid">
                 <div className="field">
-                  <label>Min RAM (GB) — optional</label>
+                  <label>RAM (GB) - optional</label>
                   <input type="number" min={2} max={64} placeholder="e.g. 8"
                     value={form.min_ram_gb}
                     onChange={e => setField('min_ram_gb', e.target.value)} />
                 </div>
                 <div className="field">
-                  <label>Min Storage (GB) — optional</label>
+                  <label>Storage (GB) - optional</label>
                   <input type="number" min={32} max={2048} placeholder="e.g. 256"
                     value={form.min_storage_gb}
                     onChange={e => setField('min_storage_gb', e.target.value)} />
@@ -307,20 +326,31 @@ export default function RecommendPage() {
               </label>
             </div>
 
-            {error && <div className="alert alert-red"><span className="alert-icon">⚠️</span>{error}</div>}
-
+            {error && (
+              <div className="alert alert-red animate-bounce-in">
+                <AlertTriangle size={16} />
+                <span>{error}</span>
+              </div>
+            )}
             <button className="btn btn-primary" onClick={run} disabled={loading}
               style={{ width: '100%', justifyContent: 'center', marginTop: 4 }}>
-              {loading ? <><span className="btn-spinner" /> Finding matches…</> : '🎯 Find Best Matches'}
+              {loading ? (
+                <><span className="btn-spinner" /> {t('COMMON.loading')}</>
+              ) : (
+                <><Zap size={16} /> {t('RECOMMEND.rec_find')}</>
+              )}
             </button>
           </div>
 
           {/* Chipflation context for category */}
-          <div className="card">
-            <div className="card-title">Category Chipflation Risk</div>
+          <div className="card animate-fade-in-up stagger-2" style={{ marginTop: 'var(--spacing-4)', padding: 'var(--spacing-4)' }}>
+            <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <AlertTriangle size={16} color="var(--warning, #eab308)" />
+              Category Chipflation Risk
+            </div>
             {(() => {
               const riskMap = {
-                mobile:   { risk: 'HIGH', note: 'LPDDR5X mobile RAM costs up 15–20%' },
+                mobile:   { risk: 'HIGH', note: 'LPDDR5X mobile RAM costs up 15-20%' },
                 laptop:   { risk: 'HIGH', note: 'DDR5 SO-DIMM & PCIe Gen4 SSD elevated by AI demand' },
                 audio:    { risk: 'LOW',  note: 'Bluetooth SoCs stable; minor logistics cost increase' },
                 video:    { risk: 'LOW',  note: 'Display panel yields stable; minor processor inflation' },
@@ -329,10 +359,10 @@ export default function RecommendPage() {
               };
               const r = riskMap[form.category];
               return (
-                <div className={`alert ${r.risk === 'HIGH' ? 'alert-red' : 'alert-green'}`}>
-                  <span className="alert-icon">{r.risk === 'HIGH' ? '⚠️' : '✅'}</span>
+                <div className={`alert ${r.risk === 'HIGH' ? 'alert-red' : 'alert-green'}`} style={{ marginTop: 8 }}>
+                  {r.risk === 'HIGH' ? <AlertTriangle size={16} /> : <CheckCircle size={16} />}
                   <div>
-                    <strong>{form.category.toUpperCase()} — {r.risk} CHIPFLATION RISK</strong><br />
+                    <strong>{form.category.toUpperCase()} - {r.risk} CHIPFLATION RISK</strong><br />
                     {r.note}
                   </div>
                 </div>
@@ -344,17 +374,17 @@ export default function RecommendPage() {
         {/* Results */}
         <div>
           {result ? (
-            <>
-              <div style={{ marginBottom: 12, color: 'var(--text-muted)', fontSize: 13 }}>
-                Found <strong style={{ color: 'var(--text)' }}>{totalResults} matches</strong> for{' '}
-                <strong style={{ color: 'var(--primary-light)' }}>
-                  {form.use_case.replace(/_/g,' ')} under {fmt(form.max_budget_inr)}
+            <div className="result-appear">
+              <div style={{ marginBottom: 'var(--spacing-4)', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                <strong>{totalResults} {t('COMMON.total').toLowerCase()}</strong> {t('RECOMMEND.rec_results').toLowerCase()} for{' '}
+                <strong style={{ color: 'var(--primary)' }}>
+                  {form.use_case.replace(/_/g, ' ')} under {fmt(form.max_budget_inr)}
                 </strong>
               </div>
 
               {result.primary?.length > 0 && (
                 <>
-                  <div className="section-divider">🏆 Primary Recommendations</div>
+                  <div className="section-divider">{t('RECOMMEND.rec_primary') || 'Primary Recommendations'}</div>
                   {result.primary.map((m, i) => (
                     <ProductCard key={i} match={m} label="primary" />
                   ))}
@@ -363,7 +393,7 @@ export default function RecommendPage() {
 
               {result.alternatives?.length > 0 && (
                 <>
-                  <div className="section-divider">🔄 Alternatives</div>
+                  <div className="section-divider">{t('RECOMMEND.rec_alternatives') || 'Alternatives'}</div>
                   {result.alternatives.map((m, i) => (
                     <ProductCard key={i} match={m} label="alternative" />
                   ))}
@@ -372,7 +402,9 @@ export default function RecommendPage() {
 
               {result.refurbished?.length > 0 && (
                 <>
-                  <div className="section-divider">♻️ Certified Refurbished / Open-Box</div>
+                  <div className="section-divider" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <RefreshCw size={14} /> Certified Refurbished / Open-Box
+                  </div>
                   {result.refurbished.map((m, i) => (
                     <ProductCard key={i} match={m} label="refurbished" />
                   ))}
@@ -380,17 +412,20 @@ export default function RecommendPage() {
               )}
 
               {totalResults === 0 && (
-                <div className="alert alert-yellow">
-                  <span className="alert-icon">⚠️</span>
-                  <div>No matches found within your budget for this use case. Try increasing your budget or enabling refurbished options.</div>
+                <div className="alert alert-yellow animate-bounce-in">
+                  <AlertTriangle size={16} />
+                  <div>{t('RECOMMEND.rec_no_results')}</div>
                 </div>
               )}
-            </>
+            </div>
           ) : (
-            <div className="card" style={{ minHeight: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12, color: 'var(--text-muted)' }}>
-              <div style={{ fontSize: 48 }}>🎯</div>
-              <div style={{ fontWeight: 600 }}>Set your requirements and find matches</div>
-              <div style={{ fontSize: 12 }}>Primary, alternative, and refurbished options will appear here</div>
+            <div className="card" style={{
+              minHeight: 400, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexDirection: 'column', gap: 12, color: 'var(--text-muted)',
+            }}>
+              <Target size={48} strokeWidth={1} />
+              <div style={{ fontWeight: 600 }}>{t('RECOMMEND.rec_subtitle')}</div>
+              <div style={{ fontSize: '0.82rem' }}>{t('RECOMMEND.rec_select_category')}</div>
             </div>
           )}
         </div>

@@ -50,3 +50,6 @@ pgdata/
 htmlcov/
 .coverage
 coverage.xml
+
+.vercel
+.env*
