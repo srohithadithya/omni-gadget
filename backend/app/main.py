@@ -97,6 +97,9 @@ def root():
             "POST /api/v1/deals/vote",
             "GET  /api/v1/deals",
             "GET  /api/v1/deals/stats",
+            "GET  /api/v1/admin/dashboard",
+            "GET  /api/v1/admin/rate-limits",
+            "POST /api/v1/admin/rate-limits/reset",
         ],
     }
 
@@ -658,6 +661,53 @@ def deal_stats():
     """Get overall deal verification statistics."""
     from app.engines.deal_verification import get_deal_stats
     return get_deal_stats()
+
+
+# ─── API Rate Limiting Dashboard ────────────────────────────────────────────
+
+@app.get("/api/v1/admin/dashboard", tags=["Admin Dashboard"])
+def get_api_dashboard(hours: int = 24, client_id: str = None):
+    """
+    API usage monitoring dashboard.
+    Shows request counts, error rates, response times, and rate limit stats.
+    """
+    from app.engines.rate_limiter import get_usage_stats, get_tier_usage, get_endpoint_health
+    try:
+        usage = get_usage_stats(client_id=client_id, hours=hours)
+        tier_usage = get_tier_usage()
+        endpoint_health = get_endpoint_health()
+        
+        return {
+            "period_hours": hours,
+            "overview": usage,
+            "tier_breakdown": tier_usage,
+            "endpoint_health": endpoint_health,
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/admin/rate-limits", tags=["Admin Dashboard"])
+def get_rate_limit_status():
+    """Get current rate limit configuration and status."""
+    from app.engines.rate_limiter import DEFAULT_LIMITS, ENDPOINT_LIMITS
+    return {
+        "default_limits": DEFAULT_LIMITS,
+        "endpoint_overrides": ENDPOINT_LIMITS,
+        "documentation": "Rate limits are per-minute. Anonymous: 30/min, Basic: 60/min, Premium: 120/min",
+    }
+
+
+@app.post("/api/v1/admin/rate-limits/reset", tags=["Admin Dashboard"])
+def reset_rate_limits(client_id: str, tier: str = "anonymous"):
+    """Reset rate limits for a specific client (admin function)."""
+    from app.engines.rate_limiter import reset_client_limits
+    try:
+        reset_client_limits(client_id, tier)
+        return {"status": "ok", "message": f"Rate limits reset for {tier}:{client_id}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ─── Combined Master Endpoint ─────────────────────────────────────────────────
