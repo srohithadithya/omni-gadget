@@ -15,11 +15,23 @@
     "nav_trends": "Market Trends"
   },
   "HOME": {
-    "home_title": "Smart Gadget Decisions, Powered by AI",
-    "home_subtitle": "Diagnose your device, find the best deals, analyze EMI costs, and make informed buying decisions — all in one place.",
+    "home_title": "Make smarter gadget decisions",
+    "home_subtitle": "Beat chipflation. Know when to buy, when to hold, and what your \"No-Cost EMI\"\n actually costs. Powered by real supply-chain data, device diagnostics, and\n transparent financial math.",
     "home_desc": "AIDE-OS analyzes device longevity, market pricing trends, and EMI hidden charges to give you the clearest buy-or-wait recommendation.",
     "home_run_full": "Run Full Decision",
-    "home_quick_start": "Quick Start"
+    "home_quick_start": "Quick Start",
+    "home_cta_diagnose": "Diagnose Your Device",
+    "home_cta_find": "Find Best Gadget",
+    "home_stat_categories": "6",
+    "home_stat_products": "20+",
+    "home_stat_hidden_fees": "4",
+    "home_stat_sale_events": "8",
+    "home_core_title": "CORE ENGINES",
+    "home_device_diagnosis_title": "Device Diagnosis",
+    "home_device_diagnosis_desc": "Calculate your device's Useful Remaining Life (URL) score based on battery health, storage wear, and age.",
+    "home_smart_recommendations_title": "Smart Recommendations",
+    "home_smart_recommendations_desc": "Get requirement-matched gadget suggestions with pros/cons, chipflation risk ratings, and refurbished alternatives.",
+    "home_learn_more": "Learn more →"
   },
   "DIAGNOSE": {
     "diag_title": "Device Diagnosis",
