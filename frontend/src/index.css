@@ -189,7 +189,58 @@ a:hover {
   text-decoration: underline;
 }
 
-/* Utility classes */
+/* Added for HomePage */
+.gradient-banner {
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg) 100%);
+  padding: var(--spacing-8) var(--spacing-6);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-6);
+  transition: all var(--transition-base);
+}
+.card:hover {
+  border-color: var(--border-muted);
+  box-shadow: var(--shadow-md);
+}
+.section-divider {
+  text-align: center;
+  position: relative;
+  margin: var(--spacing-6) 0;
+}
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 35%;
+  height: 1px;
+  background-color: var(--border);
+}
+.section-divider::before { left: 0; }
+.section-divider::after { right: 0; }
+.status-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--success);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
