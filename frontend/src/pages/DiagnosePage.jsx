@@ -1,7 +1,14 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useI18n } from '../i18n';
 import apiClient from '../api/client';
-import { Cpu, Scan, Settings, Battery, HardDrive, Smartphone, AlertTriangle, CheckCircle } from 'lucide-react';
+import {
+  Cpu, Scan, Settings, Battery, HardDrive, Smartphone, AlertTriangle, CheckCircle,
+  Activity, Target, CreditCard, TrendingUp, Zap, LayoutDashboard, BarChart3, Monitor, MousePointer, Scroll,
+  Zap as ZapIcon, TrendingUp as TrendingUpIcon
+} from 'lucide-react';
+import Button from '../components/Button';
+import Card from '../components/Card';
+import ProgressCircle from '../components/ProgressCircle';
 
 const USAGES = ['gaming', 'daily_tasks', 'multitasking', 'photography', 'coding', 'data_science', 'video_editing', 'productivity', 'music', 'remote_work'];
 
@@ -141,15 +148,15 @@ export default function DiagnosePage() {
             {autoDetected.screenSize && <span style={{ marginLeft: 8, opacity: 0.6 }}>{autoDetected.screenSize}</span>}
             {autoDetected.hardwareConcurrency && <span style={{ marginLeft: 8, opacity: 0.6 }}>{autoDetected.hardwareConcurrency} cores</span>}
           </div>
-          <button className="btn btn-primary" onClick={useAutoDetect} style={{ fontSize: '0.78rem', padding: '8px 16px' }}>
+          <Button variant="primary" size="sm" onClick={useAutoDetect}>
             {t('DIAGNOSE.diag_auto')}
-          </button>
+          </Button>
         </div>
       )}
 
       {/* Auto-detected info */}
       {isAutoMode && autoDetected && (
-        <div className="card animate-scale-in" style={{ marginBottom: 'var(--spacing-4)', padding: 'var(--spacing-4)' }}>
+        <Card className="animate-scale-in" style={{ marginBottom: 'var(--spacing-4)', padding: 'var(--spacing-4)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <CheckCircle size={16} color="var(--success)" />
             <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{t('COMMON.auto_detected')}</span>
@@ -166,12 +173,12 @@ export default function DiagnosePage() {
             <div><span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>OS</span><br/><strong>{autoDetected.os} {autoDetected.osVersion}</strong></div>
             {autoDetected.deviceMemory && <div><span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>RAM</span><br/><strong>{autoDetected.deviceMemory} GB</strong></div>}
           </div>
-        </div>
+        </Card>
       )}
 
       <div className="card-grid">
         {/* Input Form */}
-        <div className="card animate-fade-in-up stagger-1" style={{ padding: 'var(--spacing-6)' }}>
+        <Card className="animate-fade-in-up stagger-1" style={{ padding: 'var(--spacing-6)' }}>
           <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Settings size={18} color="var(--primary)" />
             {t('DIAGNOSE.diag_manual')}
@@ -206,7 +213,7 @@ export default function DiagnosePage() {
           <div className="field">
             <label className="tooltip-wrap">
               {t('DIAGNOSE.diag_battery')}
-              <span className="tooltip-text">Check in Settings &gt; Battery or use a battery health app</span>
+              <span className="tooltip-text">Check in Settings > Battery or use a battery health app</span>
             </label>
             <div className="slider-wrap">
               <input type="range" min={0} max={100} value={form.battery} onChange={e => setField('battery', +e.target.value)} />
@@ -243,65 +250,67 @@ export default function DiagnosePage() {
             </div>
           )}
 
-          <button className="btn btn-primary" onClick={runDiagnosis} disabled={loading}
-            style={{ width: '100%', justifyContent: 'center' }}>
+          <Button
+            variant="primary"
+            onClick={runDiagnosis}
+            disabled={loading}
+            style={{ width: '100%' }}
+          >
             {loading ? <><span className="btn-spinner" /> {t('COMMON.loading')}</> : (
               <><Cpu size={16} /> {t('DIAGNOSE.diag_run')}</>
             )}
-          </button>
-        </div>
+          </Button>
+        </Card>
 
         {/* Results */}
-        <div>
+        <Card>
           {result ? (
-            <div className="result-appear">
+            <>
               {/* Health Score Big Number */}
-              <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-8)' }}>
+              <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-8)', marginBottom: 'var(--spacing-4)' }}>
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
                   {t('DIAGNOSE.diag_score')}
                 </div>
-                <div style={{
-                  fontSize: 64, fontWeight: 800, lineHeight: 1,
-                  color: healthColor(result.url_score_pct),
-                }}>
-                  {result.url_score_pct}%
-                </div>
+                <ProgressCircle
+                  value={result.url_score_pct}
+                  size={120}
+                  strokeWidth={12}
+                  label={`${result.url_score_pct}%`}
+                />
                 <div style={{ marginTop: 12 }}>
-                  <span className={`badge ${result.url_score_pct >= 70 ? 'badge-green' : result.url_score_pct >= 40 ? 'badge-yellow' : 'badge-red'}`}>
+                  <span className={`badge ${result.url_score_pct >= 70 ? 'badge-success' : result.url_score_pct >= 40 ? 'badge-warning' : 'badge-error'}`}>
                     {t(`DIAGNOSE.diag_${result.url_score_pct >= 70 ? 'excellent' : result.url_score_pct >= 50 ? 'good' : result.url_score_pct >= 30 ? 'fair' : 'poor'}`)}
                   </span>
                 </div>
               </div>
 
               {/* Years left + advice */}
-              <div className="card animate-fade-in-up stagger-2" style={{ marginTop: 'var(--spacing-4)' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)' }}>
-                  <div className="stat-box">
-                    <div className="stat-label">{t('DIAGNOSE.diag_years_left')}</div>
-                    <div className="stat-value" style={{ color: 'var(--primary)' }}>{result.estimated_years_left} yr</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-4)' }}>
+                <Card className="stat-box">
+                  <div className="stat-label">{t('DIAGNOSE.diag_years_left')}</div>
+                  <div className="stat-value" style={{ color: 'var(--primary)' }}>{result.estimated_years_left} yr</div>
+                </Card>
+                <Card className="stat-box">
+                  <div className="stat-label">{t('DIAGNOSE.diag_status')}</div>
+                  <div className="stat-value" style={{
+                    fontSize: 16,
+                    color: result.url_score_pct >= 70 ? 'var(--success)' : result.url_score_pct >= 40 ? 'var(--warning)' : 'var(--error)',
+                  }}>
+                    {result.url_score_pct >= 70 ? t('DIAGNOSE.diag_excellent') : result.url_score_pct >= 50 ? t('DIAGNOSE.diag_good') : t('DIAGNOSE.diag_fair')}
                   </div>
-                  <div className="stat-box">
-                    <div className="stat-label">{t('DIAGNOSE.diag_status')}</div>
-                    <div className="stat-value" style={{
-                      fontSize: 16,
-                      color: result.url_score_pct >= 70 ? 'var(--success)' : result.url_score_pct >= 40 ? 'var(--warning)' : 'var(--error)',
-                    }}>
-                      {result.url_score_pct >= 70 ? t('DIAGNOSE.diag_excellent') : result.url_score_pct >= 50 ? t('DIAGNOSE.diag_good') : t('DIAGNOSE.diag_fair')}
-                    </div>
-                  </div>
-                </div>
+                </Card>
               </div>
 
               {/* Advice */}
               {result.maintenance_advice && (
-                <div className="card animate-fade-in-up stagger-3" style={{ marginTop: 'var(--spacing-4)' }}>
+                <Card className="animate-fade-in-up stagger-2" style={{ marginTop: 'var(--spacing-4)' }}>
                   <div className="card-title">{t('DIAGNOSE.diag_advice')}</div>
                   <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.7 }}>
                     {result.maintenance_advice}
                   </div>
-                </div>
+                </Card>
               )}
-            </div>
+            </>
           ) : (
             <div className="card" style={{
               minHeight: 400, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -312,7 +321,7 @@ export default function DiagnosePage() {
               <div style={{ fontSize: '0.82rem' }}>{t('DIAGNOSE.diag_auto')}</div>
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );
