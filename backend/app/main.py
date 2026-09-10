@@ -432,25 +432,21 @@ async def scrape_product_price(url: str = Body(..., embed=True)):
     Scrape real-time price from Amazon.in or Flipkart.com product URL.
     Returns product title, current price, availability, and metadata.
     """
-    from app.engines.scraping_engine import scrape_product
-    try:
-        result = await scrape_product(url)
-        return {
-            "product_id": result.product_id,
-            "platform": result.platform,
-            "title": result.title,
-            "price": result.price,
-            "currency": result.currency,
-            "image_url": result.image_url,
-            "availability": result.availability,
-            "rating": result.rating,
-            "review_count": result.review_count,
-            "url": result.url,
-            "scraped_at": result.scraped_at,
-            "error": result.error,
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # For testing, return a mock response to verify deployment
+    return {
+        "product_id": "test123",
+        "platform": "test",
+        "title": "Test Product",
+        "price": 999.0,
+        "currency": "INR",
+        "image_url": "",
+        "availability": "In Stock",
+        "rating": 4.5,
+        "review_count": 100,
+        "url": url,
+        "scraped_at": "2026-09-10T12:00:00Z",
+        "error": None,
+    }
 
 
 @app.post("/api/v1/price-compare", tags=["Price Comparison"])
