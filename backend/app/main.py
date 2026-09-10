@@ -60,6 +60,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Security Headers (CSP, HSTS, X-Frame-Options, etc.)
+from app.security import SecurityHeadersMiddleware, JWTAuthMiddleware
+app.add_middleware(SecurityHeadersMiddleware)
+
+# JWT Authentication Middleware (protects non-public endpoints)
+app.add_middleware(JWTAuthMiddleware)
+
 app.add_middleware(
     SessionMiddleware,
     secret_key=getattr(cfg, "SECRET_KEY", "aide-os-default-secret"),
@@ -110,7 +117,32 @@ def health_root():
     return {"status": "ok"}
 
 
-@app.get("/api/v1/health", tags=["Info"])
+# ─── Authentication ─────────────────────────────────────────────────────────────
+
+@app.post("/api/v1/auth/token", tags=["Authentication"])
+def generate_token(tier: str = "basic", scopes: str = "read"):
+    """
+    Generate a JWT access token for testing/authentication.
+    In production, this would be replaced by a proper login flow.
+    """
+    from app.security import create_access_token
+    token = create_access_token({"sub": "user", "tier": tier, "scopes": scopes.split(",")})
+    return {"access_token": token, "token_type": "bearer", "tier": tier, "scopes": scopes}
+
+
+@app.get("/api/v1/auth/me", tags=["Authentication"])
+def get_me(request: Request):
+    """Get current authenticated user info."""
+    if not hasattr(request.state, "user_id") or not request.state.user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return {
+        "user_id": request.state.user_id,
+        "tier": request.state.user_tier,
+        "scopes": request.state.user_scopes,
+    }
+
+
+# ─── Info ─────────────────────────────────────────────────────────────────────
 def health():
     return {
         "status": "healthy",
