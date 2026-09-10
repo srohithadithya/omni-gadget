@@ -427,7 +427,7 @@ def get_trends():
 # ─── Price Scraper & Comparison Endpoints ───────────────────────────────────
 
 @app.post("/api/v1/scrape", tags=["Price Scraper"])
-async def scrape_product_price(url: str):
+async def scrape_product_price(url: str = Body(..., embed=True)):
     """
     Scrape real-time price from Amazon.in or Flipkart.com product URL.
     Returns product title, current price, availability, and metadata.
