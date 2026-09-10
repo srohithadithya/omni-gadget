@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
-import './index.css';
+import '../index.css';
 
 const CATEGORIES = ['mobile', 'laptop', 'audio', 'video', 'memory', 'wearable'];
 
@@ -174,7 +174,7 @@ export default function RecommendPage() {
                 const next = (idx + 1) % presets.length;
                 setForm(f => ({ ...f, budget: presets[next] }));
               }}>
-                {-}
+                <Minus size={14} />
               </Button>
               <span style={{ fontWeight: 600, minWidth: 80, textAlign: 'center', display: 'inline-block' }}>{fmt(form.budget)}</span>
               <Button variant="outline" size="sm" onClick={() => {
@@ -184,7 +184,7 @@ export default function RecommendPage() {
                 const prev = (idx - 1 + presets.length) % presets.length;
                 setForm(f => ({ ...f, budget: presets[prev] }));
               }}>
-                {+}
+                <Plus size={14} />
               </Button>
             </div>
           </div>
@@ -198,11 +198,11 @@ export default function RecommendPage() {
             <label>{t('RECOMMEND.rec_min_rating')}</label>
             <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
               <Button variant="outline" size="sm" onClick={() => setForm(f => ({ ...f, minRating: Math.max(1, f.minRating - 1) }))}>
-                {-}
+                <Minus size={14} />
               </Button>
               <span>{form.minRating}</span>
               <Button variant="outline" size="sm" onClick={() => setForm(f => ({ ...f, minRating: Math.min(5, f.minRating + 1) }))}>
-                {+}
+                <Plus size={14} />
               </Button>
             </div>
           </div>
@@ -308,7 +308,7 @@ export default function RecommendPage() {
                 <div style={{ padding: 'var(--spacing-4)' }}>
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: 4, color: 'var(--text)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {product.brand} {product.model}
-                  </div>
+                  </h3>
                   <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: 2 }}>
                     {product.category} • {product.use_case}
                   </div>

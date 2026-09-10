@@ -125,7 +125,7 @@ export default function HomePage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)' }}>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary)', margin: 0 }}>
             {t('HOME.home_chipflation_trend')}
-          </div>
+          </h3>
           <Button variant="outline" size="sm" onClick={() => navigate('/chipflation')}>
             {t('HOME.home_view_all')}
             <TrendingUpIcon size={16} style={{ marginLeft: 4 }} />
@@ -165,7 +165,7 @@ export default function HomePage() {
                   {t('HOME.home_device_diagnosis_desc')}
                 </p>
               </div>
-              <a href="/diagnose" style={{ alignSelf: 'flex-end', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none', fontSize: '0.875rem' }}>
+              <a href="/diagnose" onClick={(e) => { e.preventDefault(); navigate('/diagnose'); }} style={{ alignSelf: 'flex-end', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none', fontSize: '0.875rem' }}>
                 {t('HOME.home_learn_more')}
                 <ZapIcon size={16} style={{ marginLeft: 4 }} />
               </a>
@@ -185,7 +185,7 @@ export default function HomePage() {
                   {t('HOME.home_smart_recommendations_desc')}
                 </p>
               </div>
-              <a href="/recommend" style={{ alignSelf: 'flex-end', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none', fontSize: '0.875rem' }}>
+              <a href="/recommend" onClick={(e) => { e.preventDefault(); navigate('/recommend'); }} style={{ alignSelf: 'flex-end', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none', fontSize: '0.875rem' }}>
                 {t('HOME.home_learn_more')}
                 <TrendingUpIcon size={16} style={{ marginLeft: 4 }} />
               </a>
@@ -205,7 +205,7 @@ export default function HomePage() {
                   {t('HOME.home_emi_audit_desc')}
                 </p>
               </div>
-              <a href="/emi-audit" style={{ alignSelf: 'flex-end', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none', fontSize: '0.875rem' }}>
+              <a href="/emi-audit" onClick={(e) => { e.preventDefault(); navigate('/emi-audit'); }} style={{ alignSelf: 'flex-end', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none', fontSize: '0.875rem' }}>
                 {t('HOME.home_learn_more')}
                 <ZapIcon size={16} style={{ marginLeft: 4 }} />
               </a>
@@ -225,7 +225,7 @@ export default function HomePage() {
                   {t('HOME.home_full_decision_desc')}
                 </p>
               </div>
-              <a href="/full-decision" style={{ alignSelf: 'flex-end', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none', fontSize: '0.875rem' }}>
+              <a href="/full-decision" onClick={(e) => { e.preventDefault(); navigate('/full-decision'); }} style={{ alignSelf: 'flex-end', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none', fontSize: '0.875rem' }}>
                 {t('HOME.home_learn_more')}
                 <LayoutDashboard size={16} style={{ marginLeft: 4 }} />
               </a>

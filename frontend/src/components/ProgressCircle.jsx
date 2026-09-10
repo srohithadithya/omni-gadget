@@ -1,6 +1,6 @@
 import React from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
-import './index.css';
+import '../index.css';
 
 const ProgressCircle = ({ value, size = 100, strokeWidth = 8, label }) => {
   const percent = Math.min(Math.max(value, 0), 100);

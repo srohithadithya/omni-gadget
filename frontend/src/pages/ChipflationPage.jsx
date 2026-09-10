@@ -2,6 +2,8 @@ import React, { useState, useCallback, useEffect } from 'react';
 import apiClient from '../api/client';
 import { useI18n } from '../i18n';
 import { TrendingUp, Zap, RefreshCw, BrainCircuit, AlertTriangle, Calendar, Download } from 'lucide-react';
+import Button from '../components/Button';
+import Card from '../components/Card';
 
 function fmt(n) {
   return '\u20b9' + Number(n).toLocaleString('en-IN');
@@ -253,16 +255,16 @@ export default function ChipflationPage() {
                     </div>
                   </div>
                 </div>
-                <button
-                  className="btn btn-primary"
+                <Button
+                  variant="primary"
                   onClick={runAuto}
                   disabled={autoLoading}
-                  style={{ width: '100%', justifyContent: 'center', marginTop: 'var(--spacing-3)' }}
+                  style={{ width: '100%', marginTop: 'var(--spacing-3)' }}
                 >
                   {autoLoading ? <><span className="btn-spinner" /> {t('COMMON.loading')}</> : (
                     <><RefreshCw size={15} /> {t('CHIP.chip_refresh')}</>
                   )}
-                </button>
+                </Button>
               </div>
             ) : (
               /* Manual mode: full controls */
@@ -298,9 +300,9 @@ export default function ChipflationPage() {
                     <span className="slider-val">{form.urgency_factor.toFixed(1)}×</span>
                   </div>
                 </div>
-                <button className="btn btn-primary" onClick={runManual} disabled={loading} style={{ width: '100%', justifyContent: 'center', marginTop: 4 }}>
+                <Button variant="primary" onClick={runManual} disabled={loading} style={{ width: '100%', marginTop: 4 }}>
                   {loading ? <><span className="btn-spinner" /> {t('COMMON.loading')}</> : <><Zap size={15} /> {t('CHIP.chip_compute')}</>}
-                </button>
+                </Button>
               </>
             )}
 
@@ -386,7 +388,7 @@ export default function ChipflationPage() {
 
               {/* Driver */}
               <div className="alert alert-blue animate-fade-in-up stagger-3" style={{ marginTop: 12 }}>
-                <span className="alert-icon">\U0001f52c</span>
+                <span className="alert-icon">🔬</span>
                 <div><strong>{t('CHIP.chip_driver')}</strong><br />{result.driver}</div>
               </div>
 
@@ -404,10 +406,10 @@ export default function ChipflationPage() {
                 <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.7 }}>{result.seasonal_hint}</div>
                 <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                   <span className="badge badge-purple" style={{ fontSize: 11 }}>{t('CHIP.chip_buy_window')}: {result.buy_window?.replace(/_/g, ' ')}</span>
-                  <button className="btn btn-outline" onClick={exportReport} style={{ fontSize: 12, padding: '7px 14px' }}>
-                    <Download size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                  <Button variant="outline" size="sm" onClick={exportReport}>
+                    <Download size={14} />
                     {t('CHIP.chip_export')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -443,7 +445,7 @@ export default function ChipflationPage() {
           </tbody>
         </table>
         <div className="alert alert-red" style={{ marginTop: 16 }}>
-          <span className="alert-icon">\U0001f3ed</span>
+          <span className="alert-icon">🏭</span>
           <div>
             <strong>{t('CHIP.chip_root')}</strong><br />
             {t('CHIP.chip_root_desc')}
