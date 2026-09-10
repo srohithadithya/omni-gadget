@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ClipboardList,
   CheckCircle,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 import apiClient from '../api/client';
 import { useI18n } from '../i18n';
+import Button from '../components/Button';
 
 const REFRESH_INTERVAL = 30000;
 
@@ -45,6 +47,7 @@ function barColor(pct) {
 }
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const { t } = useI18n();
   const [history, setHistory] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -147,20 +150,14 @@ export default function DashboardPage() {
           <div style={{ fontSize: 13 }}>
             {t('DASHBOARD.dash_subtitle')}
           </div>
-          <a
-            href="/full-decision"
-            className="btn btn-primary"
-            style={{
-              marginTop: 8,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              background: 'linear-gradient(135deg, #d97706, #b45309)',
-            }}
+          <Button
+            variant="primary"
+            onClick={() => navigate('/full-decision')}
+            style={{ marginTop: 8 }}
           >
             <Zap size={16} />
             {t('DASHBOARD.dash_run_now')}
-          </a>
+          </Button>
         </div>
       ) : (
         <>

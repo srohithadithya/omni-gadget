@@ -213,7 +213,7 @@ export default function DiagnosePage() {
           <div className="field">
             <label className="tooltip-wrap">
               {t('DIAGNOSE.diag_battery')}
-              <span className="tooltip-text">Check in Settings > Battery or use a battery health app</span>
+              <span className="tooltip-text">Check in Settings &gt; Battery or use a battery health app</span>
             </label>
             <div className="slider-wrap">
               <input type="range" min={0} max={100} value={form.battery} onChange={e => setField('battery', +e.target.value)} />

@@ -1,5 +1,5 @@
 import React from 'react';
-import './index.css';
+import '../index.css';
 
 const Button = ({ children, variant = 'primary', size = 'md', onClick, disabled, loading, iconLeft, iconRight, className = '' }) => {
   const baseClasses = `btn btn-${variant} btn-${size} ${className}`;

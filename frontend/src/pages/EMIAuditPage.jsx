@@ -2,6 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { useI18n } from '../i18n';
 import apiClient from '../api/client';
 import { CreditCard, AlertTriangle, CheckCircle, Receipt, Banknote, Shield, Info } from 'lucide-react';
+import Button from '../components/Button';
+import Card from '../components/Card';
 
 function fmt(n) {
   return '\u20b9' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
@@ -117,12 +119,12 @@ export default function EMIAuditPage() {
             </div>
           )}
 
-          <button className="btn btn-primary" onClick={runAudit} disabled={loading}
-            style={{ width: '100%', justifyContent: 'center' }}>
+          <Button variant="primary" onClick={runAudit} disabled={loading}
+            style={{ width: '100%' }}>
             {loading ? <><span className="btn-spinner" /> {t('COMMON.loading')}</> : (
               <><Receipt size={16} /> {t('EMI.emi_calculate')}</>
             )}
-          </button>
+          </Button>
         </div>
 
         {/* Results */}
@@ -201,14 +203,10 @@ export default function EMIAuditPage() {
                 </div>
 
                 <div style={{ display: 'flex', gap: 'var(--spacing-3)', alignItems: 'center', marginBottom: 'var(--spacing-3)', flexWrap: 'wrap' }}>
-                  <button onClick={() => setShowGST(!showGST)} className="btn" style={{
-                    padding: '8px 16px', fontSize: '0.82rem',
-                    border: '1px solid var(--border)', background: showGST ? 'rgba(34,197,94,0.1)' : 'transparent',
-                    color: showGST ? 'var(--success)' : 'var(--text-muted)',
-                  }}>
-                    <Receipt size={14} style={{ marginRight: 4 }} />
+                  <Button variant={showGST ? 'primary' : 'outline'} size="sm" onClick={() => setShowGST(!showGST)}>
+                    <Receipt size={14} />
                     {showGST ? 'GST Breakdown Shown' : 'Show GST Breakdown'}
-                  </button>
+                  </Button>
                 </div>
 
                 {showGST && (

@@ -8,6 +8,8 @@ import {
   Headphones, Film, MemoryStick, Watch,
   ArrowRight, ChevronRight, Loader2,
 } from 'lucide-react';
+import Button from '../components/Button';
+import Card from '../components/Card';
 
 const CATEGORIES = ['mobile', 'laptop', 'audio', 'video', 'memory', 'wearable'];
 
@@ -171,10 +173,10 @@ export default function FullDecisionPage() {
             </div>
 
             {error && <div className="alert alert-red"><span className="alert-icon"><AlertTriangle size={16} /></span>{error}</div>}
-            <button className="btn btn-primary" onClick={run} disabled={loading}
-              style={{ width: '100%', justifyContent: 'center', marginTop: 4 }}>
-              {loading ? <><span className="btn-spinner" /> {t('DECISION.dec_running')}</> : <><Zap size={16} style={{ marginRight: 4 }} /> {t('DECISION.dec_run')}</>}
-            </button>
+            <Button variant="primary" onClick={run} disabled={loading}
+              style={{ width: '100%', marginTop: 4 }}>
+              {loading ? <><span className="btn-spinner" /> {t('DECISION.dec_running')}</> : <><Zap size={16} /> {t('DECISION.dec_run')}</>}
+            </Button>
           </div>
         </div>
 
