@@ -81,7 +81,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Content-Security-Policy"] = self.csp_policy
         
         # Remove server header
-        response.headers.pop("Server", None)
+        try:
+            del response.headers["Server"]
+        except KeyError:
+            pass
         
         return response
 
