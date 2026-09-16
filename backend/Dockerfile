@@ -37,7 +37,11 @@ WORKDIR /app
 # Copy application code
 COPY app/ ./app/
 
+# Copy Telegram bot module (optional feature — gracefully skipped if token not set)
+COPY ../bot/ ./bot/
+
 # Ensure python path includes /app so `app.main` resolves
+# /app is on PYTHONPATH so both `app.*` and `bot.*` imports resolve
 ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1
 
