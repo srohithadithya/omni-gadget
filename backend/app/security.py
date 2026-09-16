@@ -65,27 +65,32 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         response = await call_next(request)
-        
+
+        # Skip strict security headers for API docs (Swagger UI needs CDN scripts & inline styles)
+        path = request.url.path
+        if path.startswith("/docs") or path.startswith("/redoc") or path.startswith("/openapi"):
+            return response
+
         # Security Headers
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
-        
+
         # HSTS (only in production with HTTPS)
         if request.url.scheme == "https":
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
-        
+
         # CSP
         response.headers["Content-Security-Policy"] = self.csp_policy
-        
+
         # Remove server header
         try:
             del response.headers["Server"]
         except KeyError:
             pass
-        
+
         return response
 
 
