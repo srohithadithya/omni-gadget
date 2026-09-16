@@ -111,15 +111,16 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         # Exact matches
         if path in PUBLIC_ENDPOINTS:
             return True
-        
+
         # Prefix matches for docs
         if path.startswith("/docs") or path.startswith("/redoc") or path.startswith("/openapi.json"):
             return True
-        
-        # Health and categories
-        if path in ALWAYS_PUBLIC_PATHS:
+
+        # All /api/v1/* routes are public (no login flow in frontend)
+        # Only /api/v1/admin/* routes require authentication
+        if path.startswith("/api/v1/") and not path.startswith("/api/v1/admin/"):
             return True
-        
+
         return False
     
     async def dispatch(self, request: Request, call_next: Callable) -> Response:

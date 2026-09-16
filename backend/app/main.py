@@ -52,14 +52,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=cfg.ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # Security Headers (CSP, HSTS, X-Frame-Options, etc.)
 from app.security import SecurityHeadersMiddleware, JWTAuthMiddleware
 app.add_middleware(SecurityHeadersMiddleware)
@@ -70,6 +62,17 @@ app.add_middleware(JWTAuthMiddleware)
 app.add_middleware(
     SessionMiddleware,
     secret_key=getattr(cfg, "SECRET_KEY", "aide-os-default-secret"),
+)
+
+# CORS must be the outermost middleware (registered last in Starlette = executes first).
+# This ensures Access-Control-Allow-Origin is present even on 401/500 error responses,
+# preventing the browser from treating them as "Network Error".
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,   # credentials=True is incompatible with allow_origins=["*"]
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
