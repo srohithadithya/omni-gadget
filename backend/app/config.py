@@ -32,7 +32,11 @@ class Settings:
 
     # ── API ───────────────────────────────────────────────────────────────────
     API_PREFIX: str = "/api/v1"
-    ALLOWED_ORIGINS: list = ["*"]
+    # Read allowed origins from CORS_ORIGINS env var (set in render.yaml), fallback to *
+    _raw_origins: str = os.getenv("CORS_ORIGINS", '*')
+    ALLOWED_ORIGINS: list = ["*"] if _raw_origins == '*' else [
+        o.strip().strip('"') for o in _raw_origins.strip('[]').split(',')
+    ]
 
     # ── GST / Tax constants (India) ───────────────────────────────────────────
     GST_RATE: float = 0.18
