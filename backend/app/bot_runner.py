@@ -23,6 +23,12 @@ def _run_bot():
         from bot.telegram_bot import main as bot_main
         logger.info("🤖 Starting Telegram bot in background thread …")
         bot_main()
+    except ModuleNotFoundError as exc:
+        logger.warning(
+            "Bot module not found (%s) — Telegram bot disabled. "
+            "Ensure bot/ directory is present in the deployment image.",
+            exc,
+        )
     except Exception as exc:
         logger.error("Bot thread crashed: %s", exc, exc_info=True)
 
