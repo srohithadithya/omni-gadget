@@ -2,5 +2,11 @@
   "root": "frontend",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "framework": "vite"
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/api/:match*",
+      "destination": "https://omni-gadget.onrender.com/api/:match*"
+    }
+  ]
 }
