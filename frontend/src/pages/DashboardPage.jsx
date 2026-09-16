@@ -103,6 +103,24 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Quick Links */}
+      <div className="card-grid" style={{ marginBottom: 20, gridTemplateColumns: '1fr 1fr' }}>
+        <div className="card hoverable" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate('/full-decision')}>
+          <div>
+            <div style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 6 }}><Zap size={16} color="var(--primary)" /> Full Decision Engine</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>Run a comprehensive analysis of your device</div>
+          </div>
+          <ArrowRight size={16} color="var(--text-muted)" />
+        </div>
+        <div className="card hoverable" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate('/chipflation')}>
+          <div>
+            <div style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 6 }}><TrendingUp size={16} color="var(--primary)" /> Chipflation Index</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>Check market inflation & optimal buy windows</div>
+          </div>
+          <ArrowRight size={16} color="var(--text-muted)" />
+        </div>
+      </div>
+
       {loading ? (
         <div
           className="card"

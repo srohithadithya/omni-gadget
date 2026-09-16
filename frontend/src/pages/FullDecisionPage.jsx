@@ -93,6 +93,15 @@ export default function FullDecisionPage() {
       <div className="page-header">
         <h1><Zap size={22} style={{ marginRight: 6, verticalAlign: 'middle' }} /> {t('DECISION.dec_title')}</h1>
         <p>{t('DECISION.dec_subtitle')}</p>
+        <div className="card" style={{ marginTop: 12, padding: '12px 16px', background: 'var(--bg-elevated)', borderLeft: '4px solid var(--primary)' }}>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text)', lineHeight: 1.5 }}>
+            <strong>How this works:</strong> The Full Decision engine runs your scenario through 4 separate modules: 
+            <strong> URL</strong> (remaining lifespan of your device), 
+            <strong> DI</strong> (Chipflation market analysis), 
+            <strong> EMI Audit</strong> (hidden charges on loans), and 
+            <strong> Recommendations</strong>. It combines them into a single, definitive verdict.
+          </div>
+        </div>
       </div>
 
       <div className="card-grid">

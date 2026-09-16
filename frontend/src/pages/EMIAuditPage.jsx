@@ -27,12 +27,11 @@ export default function EMIAuditPage() {
     setLoading(true); setError(null);
     try {
       const { data } = await apiClient.emiAudit({
-        product_price: form.price,
+        product_msrp: form.price,
         tenure_months: form.tenure,
-        annual_rate_pct: form.rate,
-        processing_fee: form.pfee,
+        bank_processing_fee: form.pfee,
         forgone_cash_discount: form.cashDiscount,
-        no_cost_emi_hidden_discount: form.noCostDiscount,
+        no_cost_discount: form.noCostDiscount,
       });
       setResult(data);
     } catch (e) {

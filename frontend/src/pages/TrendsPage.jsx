@@ -269,10 +269,13 @@ export default function TrendsPage() {
           )}
 
           {/* Fallback empty state */}
-          {!chipflationTrend && categoryDI.length === 0 && popularProducts.length === 0 && recentInsights.length === 0 && (
+          {!chipflationTrend && filteredCategories.length === 0 && filteredPopular.length === 0 && filteredInsights.length === 0 && (
             <div className="card" style={{ minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12, color: 'var(--text-muted)' }}>
               <BarChart3 size={48} color="var(--text-muted)" />
-              <div style={{ fontWeight: 600 }}>{t('TRENDS.trend_no_data')}</div>
+              <div style={{ fontWeight: 600 }}>{t('TRENDS.trend_no_data') || 'No Market Trends Available'}</div>
+              <div style={{ fontSize: 13, maxWidth: 300, textAlign: 'center' }}>
+                We are currently gathering real-time data for this selection. Please check back later or try another region.
+              </div>
             </div>
           )}
         </>
