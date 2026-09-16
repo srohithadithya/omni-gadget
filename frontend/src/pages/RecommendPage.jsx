@@ -98,19 +98,20 @@ export default function RecommendPage() {
         per_page: 10,
       };
       const { data } = await apiClient.recommend(payload);
+      const extractProducts = (matches) => (matches || []).map(m => ({
+        ...m.product,
+        match_score: m.match_score,
+        value_verdict: m.value_verdict
+      }));
+
       if (selectedTab === 'new') {
-        setResults(data.results || []);
-        setTotalPages(data.total_pages || 1);
+        setResults(extractProducts(data.primary));
       } else if (selectedTab === 'refurbished') {
-        // We'll store refurbished results separately; for simplicity, we can use same state but differentiate.
-        // Let's have separate states: newResults, refurbishedResults, previousGenResults.
-        // For brevity, we'll just overwrite results and note that UI will need adjustment.
-        setResults(data.results || []);
-        setTotalPages(data.total_pages || 1);
+        setResults(extractProducts(data.refurbished));
       } else {
-        setResults(data.results || []);
-        setTotalPages(data.total_pages || 1);
+        setResults(extractProducts(data.alternatives));
       }
+      setTotalPages(1);
     } catch (e) {
       setError(e.response?.data?.detail || e.message);
     } finally {

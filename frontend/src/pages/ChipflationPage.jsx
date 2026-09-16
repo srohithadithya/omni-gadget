@@ -189,6 +189,11 @@ export default function ChipflationPage() {
       <div className="page-header animate-fade-in">
         <h1><span style={{ marginRight: 8 }}><TrendingUp size={22} color="var(--primary)" style={{ verticalAlign: 'middle' }} /></span>{t('CHIP.chip_title')}</h1>
         <p>{t('CHIP.chip_subtitle')}</p>
+        <div className="card" style={{ marginTop: 12, padding: '12px 16px', background: 'var(--bg-elevated)', borderLeft: '4px solid var(--primary)' }}>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text)', lineHeight: 1.5 }}>
+            <strong>What is the Chipflation Index?</strong> It measures how upstream component costs (like RAM and SSDs) affect retail prices. A value &gt; 1.0 means prices are inflated; &lt; 1.0 means prices are dropping. Our Decision Index (DI) combines this with your urgency to tell you whether to buy now or wait.
+          </div>
+        </div>
       </div>
 
       {/* Auto / Manual toggle */}

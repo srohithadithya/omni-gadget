@@ -110,7 +110,7 @@ export default function DiagnosePage() {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await apiClient.diagnose({
+      const { data } = await apiClient.deviceLongevity({
         category: form.category,
         age_months: form.age,
         battery_health_pct: form.battery,
