@@ -71,5 +71,20 @@ services:
       backend:
         condition: service_healthy
 
+  # ── Telegram Bot ──────────────────────────────────────────────────────────
+  bot:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+    container_name: aideos_bot
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://aideuser:aidepass@postgres:5432/aideosdb
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      BOT_CHAT_ID: ${BOT_CHAT_ID}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   pgdata:
