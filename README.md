@@ -662,8 +662,10 @@ Remaining roadmap items to tackle:
 - [x] **Batch price comparison tool** — Compare prices across 12 e-commerce platforms simultaneously
 - [x] **ML price prediction model** — Forecast future price movements using historical chipflation data
 - [x] **API rate limiting dashboard** — Usage monitoring and abuse prevention for public API consumers
-- [x] Telegram price-drop notification bot (daemon thread in backend)
+- [x] Telegram price-drop notification bot (Decoupled Microservice in Docker)
 - [x] Chrome Extension (Manifest V3) for inline price checking
+- [x] Automated CI/CD Pipelines via GitHub Actions
+- [x] Complete React Frontend Testing Suite (Vitest + Testing Library)
 - [x] DB-backed product catalogue (100+ products across 6 categories)
 - [x] Device telemetry + EMI audit logging
 - [x] Affiliate buy buttons (Amazon/Flipkart/EarnKaro)
@@ -690,3 +692,10 @@ MIT — Open source, free to use, fork, and extend.
   <sub><em>Always check the Chipflation Index before upgrading your hardware.</em></sub>
 </div>
 </div># Last redeploy trigger 1789047590
+
+
+---
+
+## 🏷️ Technical Tags & Keywords
+
+`aide-os`, `dynamic-pricing-engine`, `chipflation`, `device-longevity-predictor`, `tech-budget-optimizer`, `emi-calculator`, `hidden-fees-auditor`, `open-source-fintech`, `fastapi-backend`, `react-vite-frontend`, `postgresql-neon`, `docker-compose`, `render-deployment`, `telegram-deal-bot`, `chrome-extension`, `price-scraper`.

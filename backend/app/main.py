@@ -18,11 +18,7 @@ logger = logging.getLogger("aide-os")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Start Telegram bot daemon thread on server startup."""
-    from app.bot_runner import start_bot_if_configured
-    bot_thread = start_bot_if_configured()
-    if bot_thread:
-        logger.info("Telegram bot running in background (thread=%s)", bot_thread.name)
+    """Start application context."""
     yield
     logger.info("Shutting down AIDE-OS …")
 from app.schemas import (
